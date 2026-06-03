@@ -1,0 +1,6 @@
+experiment,overall_mAP50,crazing,inclusion,patches,pitted_surface,rolled_in_scale,scratches
+baseline (yolov8n, 50e),0.7824,0.2894,0.7834,0.9940,0.9861,0.6707,0.9706
+Exp 1 (yolov8s, 50e),0.7770,0.3153,0.8473,0.9705,0.9872,0.5745,0.9670
+Exp 2 (cosine, 50e),0.7894,0.2929,0.8382,0.9942,0.9895,0.6483,0.9735
+Exp 3 (cosine, 100e),0.7809,0.3051,0.7680,0.9934,0.9885,0.6449,0.9856
+Exp 4 (craze focus),0.7997,0.4296,0.8116,0.9931,0.9855,0.5979,0.9805

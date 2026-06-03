@@ -1,0 +1,36 @@
+# Data and models (NEVER commit raw data)
+data/raw/
+models/
+*.pt
+*.onnx
+*.engine
+
+# 放行 splits（实验可复现性必需）
+!data/splits/
+!data/splits/*.txt
+# 放行人工标注（U-Net 评测基准，必须 commit）
+!data/annotations_manual/
+!data/annotations_manual/**
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.egg-info/
+
+# Training outputs
+runs/
+wandb/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local secrets
+.env
+local_*.json

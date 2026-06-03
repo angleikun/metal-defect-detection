@@ -1,0 +1,19 @@
+# YOLOv8 数据配置文件
+#
+# NEU-DET 6 类缺陷检测
+# 图像尺寸：200×200（训练时 resize 到 640）
+# Split：data/splits/{train,val}.txt（按类分层 80/10/10）
+
+path: D:\Mycode\projects\metal-defect-detection\data\raw\NEU-DET
+
+train: D:\Mycode\projects\metal-defect-detection\data\splits\train_paths.txt
+val: D:\Mycode\projects\metal-defect-detection\data\splits\val_paths.txt
+
+nc: 6
+names:
+  0: crazing
+  1: inclusion
+  2: patches
+  3: pitted_surface
+  4: rolled-in_scale
+  5: scratches

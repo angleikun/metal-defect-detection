@@ -1,0 +1,39 @@
+# ============================================================
+# metal-defect-detection 项目依赖
+# Python 3.12, CUDA 12.1, RTX 3060 Laptop 6GB
+# 安装：pip install -r requirements.txt
+# ============================================================
+
+# --- YOLOv8 主框架 ---
+ultralytics==8.4.60
+
+# --- 数值计算 ---
+numpy==2.2.6
+pandas==2.3.3
+
+# --- 图像处理 ---
+opencv-python==4.13.0
+matplotlib==3.10.9
+
+# --- 深度学习 ---
+torch==2.5.1
+torchvision==0.20.1
+segmentation-models-pytorch==0.3.4
+
+# --- COCO 评测 ---
+pycocotools==2.0.7
+
+# --- 标注工具（Day 5.5） ---
+labelme==5.5.0
+
+# --- Week 3: 桌面应用 ---
+PyQt6==6.6.1
+PyQt6-Fluent-Widgets==1.5.7
+
+# --- Week 3: 报表导出 ---
+openpyxl==3.1.5
+reportlab==4.2.2
+
+# --- Week 4: ONNX 推理 ---
+# onnxruntime-gpu  # GPU 推理（Windows 需确认 CUDA 版本匹配）
+# onnxruntime       # CPU 推理
