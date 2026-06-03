@@ -1,5 +1,14 @@
 # 本项目技术约束（Claude Code 必读）
 
+## 环境历史
+
+项目初期在 base env 完成 Week 1-2 训练（含 ultralytics + opencv + numpy）。
+Day 11 启动 PyQt6 开发时发现 base 与 spyder 的 PyQt5/Qt5 DLL 冲突。
+决策：将所有项目操作迁移到独立的 pytorch env（已预装 torch 2.5.1 + CUDA 12.1）。
+base env 保留作为系统 IDE（spyder）环境，与项目隔离。
+所有未来开发都在 `mamba activate pytorch` 后进行。
+当前 PyQt6=6.6.1 + PyQt6-Qt6=6.6.3 + qfluentwidgets=1.5.7，版本已锁定。
+
 ## 通用原则
 1. 不要一上来生成完整框架代码。先写一份"我打算怎么做"的清单，
    人确认后再分步实现。
@@ -78,10 +87,21 @@ DEVLOG 至少记一次"同 seed 重跑 mAP 浮动 < 0.005"作为可复现性实�
 ## PyQt6 版本锁定（Week 3 安装时）
 
 ```
-pip install PyQt6==6.6.1 PyQt6-Fluent-Widgets==1.5.7
+pip install PyQt6==6.6.1 PyQt6-Qt6==6.6.3 PyQt6-sip==13.11.1 PyQt6-Fluent-Widgets==1.5.7
 ```
 
-PyQt6 6.7+ 和 qfluentwidgets 偶有兼容问题，2025 Q4 这两个版本组合最稳。
+**四件套版本对齐规则**（Day 11 踩坑后总结）：
+
+| 包 | 锁定版本 | 原因 |
+|----|---------|------|
+| PyQt6 | 6.6.1 | Python 绑定，稳定版 |
+| PyQt6-Qt6 | 6.6.3 | **必须与 PyQt6 同大版本**（6.6.x），用 6.11.1 会 DLL 加载失败 |
+| PyQt6-sip | 13.11.1 | SIP 绑定版本，随 PyQt6 6.6.1 安装自动匹配 |
+| PyQt6-Fluent-Widgets | 1.5.7 | qfluentwidgets 稳定兼容版 |
+
+PyQt6 6.6.1 + Qt6 6.11.1（pip 默认安装最新版）会因跨大版本二进制不兼容导致
+`ImportError: DLL load failed while importing QtCore`。
+必须显式锁定 `PyQt6-Qt6<6.7`。
 
 ## LabelMe 使用规范（Day 5.5 人工标注用）
 

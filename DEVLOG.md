@@ -513,6 +513,101 @@ DEVLOG 详细记录两次踩坑 + 关键发现，作为面试讨论素材
 
 ---
 
+## Insight #5: Python 环境管理踩坑 + 迁移到独立 env
+
+### 现象链
+
+**阶段 1: Week 1-2 训练（错误状态下完成）**
+- 项目按 PROJECT_PLAN 设计应该跑在 conda env "pytorch"
+- 实际所有训练（YOLOv8 5 次 ablation + U-Net baseline/refined）跑在 base env
+- 原因：conda 默认 auto_activate_base=true，开终端自动进 base，未显式 mamba activate pytorch
+- 结果：Week 1-2 全部在 base 完成，跑得通但环境"不该是这样"
+
+**阶段 2: Day 11 PyQt6 装包冲突**
+- pip install PyQt6==6.6.1 装到 base env
+- 启动报 "DLL load failed while importing QtCore"
+- 4 步诊断：
+  1. VC++ Redistributable → 系统已装 2015-2022 完整版，排除
+  2. PyQt6 安装文件 → DLL 都在 site-packages/PyQt6/Qt6/bin/，完整
+  3. PATH 冲突 → 没有 Qt 相关路径
+  4. **真因**：base env 同时存在 conda 装的 PyQt5 (5.15.11) 和 pip 装的 PyQt6 (6.6.1)
+     Windows DLL 搜索顺序：conda Library\bin\ 在 PATH 前面 →
+     Python import PyQt6 时优先加载到 Qt5Core.dll → 二进制不兼容 → ImportError
+
+**阶段 3: 追溯 PyQt5 来源**
+- conda 装的 spyder 6.0.5 硬依赖 pyqt 5.15.11
+- 装 spyder 时 conda 顺带把 qt-main / qt-webengine / pyqtwebengine 一起装进 base
+- 这是"误装"的根源 — 项目并不需要 spyder
+
+**阶段 4: 修复策略选择**
+- 选项 A：给 base 加 DLL 路径补丁（os.add_dll_directory）→ 治标
+- 选项 B：迁移所有项目操作到独立 pytorch env → 治本
+- 决策：选 B。理由：环境隔离比 DLL 补丁更工程化，未来打包 .exe 也方便
+
+**阶段 5: 执行迁移 + 清理**
+1. pytorch env 装齐 PyQt6 四件套（6.6.1 + Qt6 6.6.3 + sip 13.11.1 + Fluent 1.5.7）
+   - CC 自动把 PyQt6-Qt6 从 6.11.1 降到 6.6.3，发现是跨大版本不兼容问题
+   - 锁定 4 个版本组合到 requirements.txt
+2. 弹窗测试通过：QMainWindow + QApplication 能正常显示和退出
+3. 验证 Week 1 best.pt 在 pytorch env 加载 OK
+4. 备份 pytorch env：mamba env export → pytorch_env_snapshot.yml
+5. 清理 base：
+   - pip 卸载：torch / ultralytics / PyQt6 全家 / labelme / onnxruntime /
+     segmentation_models_pytorch / torchvision（-100 包）
+   - conda 卸载：spyder / spyder-kernels / qtconsole / pyqt / qt-main /
+     qt-webengine / pyqtwebengine / pyqt5-sip（-120 包）
+6. 关闭 base 自动激活：conda config --set auto_activate_base false
+
+### 最终状态
+
+| 环境 | 用途 | 包数 |
+|---|---|---|
+| base | conda 自身 + 基础工具 | 350 个（清理前 790） |
+| pytorch | 所有项目操作 | ~200 个 |
+
+未来工作流：
+- 开终端不再自动进 base
+- 项目操作必须先 mamba activate pytorch
+- 项目根目录有 activate_env.bat 一键激活
+
+### 教训
+
+1. **conda auto_activate_base 默认 true 是个坑**
+   新装 miniforge 后第一件事应该是 conda config --set auto_activate_base false。
+   否则会"以为在自己的 env，其实在 base"，环境隔离名存实亡。
+
+2. **Windows 上 conda + pip 混用要格外小心**
+   pip 不知道 conda 装了什么，conda 不知道 pip 装了什么。
+   特别是 GUI 框架（Qt5 / Qt6）跨大版本时，DLL 加载顺序会冲突。
+
+3. **CC（AI 编程助手）在依赖诊断上容易归因偏差**
+   第一次报错 CC 归因到"VC++ Redistributable 缺失"（错的）。
+   排查后才发现真因是 Qt5/Qt6 共存。
+   教训：AI 给的"看起来合理"的修复方案要先验证再执行。
+
+4. **迁移环境而非打补丁**是更工程化的选择
+   os.add_dll_directory 能让 PyQt6 跑起来，但环境永远是乱的。
+   花 30 分钟正规迁移到独立 env，比之后每次踩坑修补丁省时间。
+
+5. **环境清理前必须备份**
+   清理 base 前导出 pytorch_env_snapshot.yml + git commit。
+   万一清理误伤，能从备份恢复。这次没用上，但下次可能就用上了。
+
+6. **base env 应该只放 conda 自身**
+   - ✅ 应该在 base：conda、pip、setuptools、wheel
+   - ❌ 不该在 base：torch、numpy、应用类库、IDE
+   - 一旦 base 装了应用包，迟早出现环境混乱
+
+### 简历可写素材
+
+"项目初期 conda env 未严格隔离，Week 1-2 训练实际跑在 base，
+与 system IDE 的 PyQt5 产生 DLL 冲突阻塞 Week 3 GUI 开发。
+诊断后采用'迁移而非补丁'策略：将所有项目操作正规化到独立 pytorch env，
+base 清理回归 conda 自身（-220 个包）。教训：Python 项目从 day 1 必须
+显式激活独立 env，并禁用 base 自动激活。"
+
+---
+
 ## 日志格式模板
 
 ```markdown

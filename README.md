@@ -59,9 +59,21 @@ metal-defect-detection/
 
 ### 1. 环境准备
 
+**重要：所有项目命令必须先激活 pytorch 环境。**
+
 ```powershell
-# 激活 pytorch 环境（已预装 PyTorch 2.5 + CUDA 12.1）
+# 方式 A：手动激活
 mamba activate pytorch
+
+# 方式 B：运行项目脚本
+activate_env.bat
+```
+
+```powershell
+# 验证环境
+python -c "import torch; print('CUDA:', torch.cuda.is_available())"
+python -c "from PyQt6.QtWidgets import QApplication; print('PyQt6 OK')"
+```
 
 # 安装项目依赖
 pip install -r requirements.txt

@@ -27,7 +27,13 @@ pycocotools==2.0.7
 labelme==5.5.0
 
 # --- Week 3: 桌面应用 ---
+# PyQt6 四件套——版本必须严格对齐，否则 Windows DLL 加载失败
+# PyQt6 6.6.1 + PyQt6-Qt6 6.6.3（不能用 6.7+ Qt6，跨大版本二进制不兼容）
+# PyQt6-sip 13.11.1（PyQt6 6.6.1 的绑定 SIP 版本，不能随意升降）
+# PyQt6-Fluent-Widgets 1.5.7（qfluentwidgets 稳定兼容版）
 PyQt6==6.6.1
+PyQt6-Qt6==6.6.3
+PyQt6-sip==13.11.1
 PyQt6-Fluent-Widgets==1.5.7
 
 # --- Week 3: 报表导出 ---
