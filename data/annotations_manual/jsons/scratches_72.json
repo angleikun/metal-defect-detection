@@ -1,0 +1,36 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "scratches",
+      "points": [
+        [
+          0.14836795252224988,
+          0.14836795252225518
+        ],
+        [
+          0.0,
+          198.51632047477744
+        ],
+        [
+          198.66468842729972,
+          198.9614243323442
+        ],
+        [
+          198.66468842729972,
+          0.0
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "polygon",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\images\\scratches_72.jpg",
+  "imageData": null,
+  "imageHeight": 200,
+  "imageWidth": 200
+}

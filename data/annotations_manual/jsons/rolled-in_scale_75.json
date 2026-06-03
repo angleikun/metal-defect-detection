@@ -1,0 +1,36 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "rolled-in_scale",
+      "points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          198.99999999999997
+        ],
+        [
+          199.0,
+          198.66685925925924
+        ],
+        [
+          199.0,
+          0.14836795252225518
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "polygon",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\images\\rolled-in_scale_75.jpg",
+  "imageData": null,
+  "imageHeight": 200,
+  "imageWidth": 200
+}

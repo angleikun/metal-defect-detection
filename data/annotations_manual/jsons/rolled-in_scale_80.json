@@ -1,0 +1,40 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "rolled-in_scale",
+      "points": [
+        [
+          0.14836795252224988,
+          1.1869436201780414
+        ],
+        [
+          0.5915637472492719,
+          199.0
+        ],
+        [
+          199.0,
+          199.0
+        ],
+        [
+          199.0,
+          1.0385756676557862
+        ],
+        [
+          -2.842170943040401e-14,
+          0.742722078015122
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "polygon",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\images\\rolled-in_scale_80.jpg",
+  "imageData": null,
+  "imageHeight": 200,
+  "imageWidth": 200
+}

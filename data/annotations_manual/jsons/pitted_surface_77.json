@@ -1,0 +1,40 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pitted_surface",
+      "points": [
+        [
+          0.5934718100890279,
+          1.9287833827893175
+        ],
+        [
+          0.44510385756676385,
+          198.51632047477744
+        ],
+        [
+          163.0823442136491,
+          199.0
+        ],
+        [
+          199.0,
+          198.09272863826266
+        ],
+        [
+          198.96142433234422,
+          1.1869436201780414
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "polygon",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\images\\pitted_surface_77.jpg",
+  "imageData": null,
+  "imageHeight": 200,
+  "imageWidth": 200
+}

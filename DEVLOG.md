@@ -431,6 +431,88 @@ K-fold 交叉验证能平滑掉此类方差，但 4 周项目周期不做。
 
 ---
 
+---
+
+## Insight #4: U-Net 弱监督分割的两次踩坑 + 多类训练负迁移发现
+
+### 现象链
+
+**阶段 1：自动生成"人工 mask"**
+- CC 在 Day 5.5 跳过人工标注，用 bbox→polygon 脚本自动生成 30 张评测 GT
+- 评测 baseline U-Net IoU = 0.72, refined v1 IoU = 0.02
+- 两个数字都不可用（baseline 是循环论证，refined 是 mask 形状不匹配）
+
+**阶段 2：人工 30 张 polygon mask + 重评 baseline**
+- LabelMe 手工标 30 张真 polygon mask
+- 评测 baseline U-Net Macro IoU = 0.413 (vs 30 真 polygon)
+- per-class: pitted=0.748, crazing=0.524, patches=0.495,
+  rolled-in_scale=0.276, scratches=0.272, inclusion=0.162
+
+**阶段 3：refined U-Net v1 全零退化**
+- vs 30 真 polygon: Macro IoU = 0.005
+- 4 步诊断：mask 稀疏 / 模型权重 / 评测口径 / 训练参数
+- 真因：OTSU_BIAS=+0.15 让 3 类 refined mask 前景 < 1%
+  - inclusion fg = 0.0% (完全黑)
+  - pitted_surface fg = 0.1%
+  - rolled-in_scale fg = 0.2%
+- 模型正确学到了"99.9% 背景"的退化解
+
+**阶段 4：refined U-Net v2 重训**
+- 改 OTSU_BIAS = -0.10
+- 6 类前景占比进入合理区间 (13-75%)
+- 人眼校验 6 张可视化图（PLAN P-6 Step 2 强制步骤）
+- 训练 50 epoch，best manual IoU = 0.366 at epoch 5
+- 训练曲线显示分布偏移：train_loss 持续下降 (0.256 → 0.034)
+  但 manual IoU 在 epoch 5 后稳定在 0.34，
+  证明 refined mask 与真 polygon mask 之间存在约 0.37 的代表性上限
+
+### baseline vs refined v2 per-class 对比
+
+| class | baseline | refined v2 | Δ | 解读 |
+|---|---|---|---|---|
+| pitted_surface | 0.748 | 0.802 | +0.053 ✅ | Otsu refine 起作用 |
+| rolled-in_scale | 0.276 | 0.319 | +0.043 ✅ | Otsu refine 起作用 |
+| scratches | 0.272 | 0.325 | +0.053 ✅ | Otsu refine 起作用 |
+| crazing | 0.524 | 0.518 | -0.007 ≈ | 持平 |
+| inclusion | 0.162 | 0.157 | -0.005 ≈ | 持平（refined mask 实际退化为 bbox 矩形） |
+| patches | 0.495 | 0.073 | **-0.422 🔴** | 关键发现：多类训练负迁移 |
+| Macro | 0.413 | 0.366 | -0.047 | refined 整体略低于 baseline |
+| Micro | 0.472 | 0.469 | -0.003 ≈ | 持平 |
+
+### 关键发现：patches 暴跌的真因
+
+可视化显示 patches 的 refined mask **实际还是 bbox 矩形**
+（Otsu 在 patches bbox 内没找到比阈值更暗的像素，fallback 到全填充）。
+按理说 refined U-Net 应该和 baseline 学到一样的 patches pattern。
+
+但实测 patches IoU 从 0.495 → 0.073，暴跌 -0.42。
+
+**真因：弱监督多类分割的负迁移**
+- baseline 训练：6 类全是矩形伪 mask，U-Net 学单一 pattern
+- refined v2 训练：3 类是不规则 mask（crazing/pitted/scratches），
+  3 类是矩形 mask（inclusion/patches/rolled-in_scale）
+- U-Net 容量有限（resnet34，~24M params），mixed-mask 训练下，
+  模型重新分配学习能力到新 pattern，patches 这种简单 pattern 被遗忘
+
+### 教训
+1. **AI 自动生成的"人工标注"是循环论证**——评测 GT 必须独立于训练标签
+2. **mask 质量必须人眼校验**——统计学信号不够（fg 占比对了不代表位置对）
+3. **退化解（全零 / 全一）是弱监督的常见 trap**——必须检查 raw logit 范围，
+   不能只看 IoU
+4. **OTSU_BIAS 是类别敏感的**——高对比度类能 refine，
+   低对比度类退化到 bbox 矩形
+5. **弱监督多类训练有标签一致性要求**——若不同类用不同标签生成策略
+   （矩形 + 不规则混合），简单类会因负迁移退化
+6. **训练曲线 vs 评测曲线的分布偏移**是弱监督本质上限的体现，
+   不是训练 bug
+
+### Week 2 最终决策
+Best U-Net = baseline_best.pt (Macro IoU = 0.413)
+保留 refined_v2_best.pt 作为对照实验数据
+DEVLOG 详细记录两次踩坑 + 关键发现，作为面试讨论素材
+
+---
+
 ## 日志格式模板
 
 ```markdown

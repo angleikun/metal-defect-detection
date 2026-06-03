@@ -17,8 +17,8 @@
 ## 已完成
 
 - [x] Week 1 (Day 1-5) 完成
-- [x] Day 5 诊断：Insight #2/#3 根因分析
-- [ ] Day 5.5 人工标注 30 张 test mask
+- [x] Day 5.5 人工标注 30 张 polygon mask（LabelMe 手动完成）
+- [x] Week 2 U-Net: baseline+both refined, best = baseline IoU=0.413, Insight #4 已写
 
 ---
 

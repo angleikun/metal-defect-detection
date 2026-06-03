@@ -1,0 +1,44 @@
+{
+  "version": "5.5.0",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "crazing",
+      "points": [
+        [
+          0.0,
+          0.14836795252225518
+        ],
+        [
+          198.99999999999997,
+          0.29632334285682765
+        ],
+        [
+          198.51632047477744,
+          198.81305637982194
+        ],
+        [
+          0.0,
+          198.66479923234266
+        ],
+        [
+          0.0,
+          0.44510385756676557
+        ],
+        [
+          0.0,
+          0.29673590504451036
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "polygon",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\images\\crazing_97.jpg",
+  "imageData": null,
+  "imageHeight": 200,
+  "imageWidth": 200
+}
