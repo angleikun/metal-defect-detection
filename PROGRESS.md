@@ -7,28 +7,24 @@
 
 ## 当前位置
 
-- **Day**: 4 → 5 交接
-- **阶段**: Week 1 算法跑通
-- **上次 session 结束于**: Day 4 调参完成，Exp 4 best val mAP@0.5 = 0.800
-- **今天目标**: 【Day 4 收尾】复现性自检 + 【Day 5 入口】test set 终值 + 分尺度 mAP
+- **Day**: 5.5
+- **阶段**: Week 2 U-Net 分割
+- **上次 session 结束于**: Day 5 完成，test=0.745，Insight #2/#3 已写
+- **今天目标**: Day 5.5 人工标注 30 张 test mask（U-Net 评测基准）
 
 ---
 
 ## 已完成
 
-- [x] Day 1-3 完成
-- [x] Day 4 调参：5 次实验，Exp 4 best val mAP@0.5 = 0.800
-- [x] `src/utils/eval_protocol.py` 固化评测协议
-- [x] ablation 表同口径重评完成
-- [x] DEVLOG Insight #1 已记录
-- [x] 复现性自检：浮动 = 0.00000 ✅
-- [ ] git commit
+- [x] Week 1 (Day 1-5) 完成
+- [x] Day 5 诊断：Insight #2/#3 根因分析
+- [ ] Day 5.5 人工标注 30 张 test mask
 
 ---
 
 ## 进行中
 
-（Day 3 完成，准备 Day 4 调参）
+（Week 1 完成，准备 Week 2 U-Net）
 
 ---
 
@@ -53,8 +49,8 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Day 2.5 split 完成：1439/180/180，每类严格分层，sha256 锁仓。
-下一步 Day 3：VOC XML → YOLO TXT 格式转换 → 写 configs/data.yaml → 写 train.py 并先跑 5 epoch 验证流程。
+Week 1 结束。Test set mAP@0.5 = 0.745。crazing 为主要瓶颈（0.291）。
+Week 2 入口：U-Net 分割 —— 弱监督伪 mask（bbox+Otsu）→ 训练 → vs 人工 mask 绝对评测。
 
 ---
 

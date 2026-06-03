@@ -8,6 +8,7 @@ path: D:\Mycode\projects\metal-defect-detection\data\raw\NEU-DET
 
 train: D:\Mycode\projects\metal-defect-detection\data\splits\train_paths.txt
 val: D:\Mycode\projects\metal-defect-detection\data\splits\val_paths.txt
+test: D:\Mycode\projects\metal-defect-detection\data\splits\test_paths.txt
 
 nc: 6
 names:
