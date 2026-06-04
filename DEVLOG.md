@@ -608,6 +608,38 @@ base 清理回归 conda 自身（-220 个包）。教训：Python 项目从 day 
 
 ---
 
+## Day 11: PyQt6 SCADA 风主窗口骨架完工 — 2026-06-04
+
+### 完成内容
+- 13 个新文件（9 个有内容 + 4 个 __init__.py），总代码量约 800 行
+- 三层架构创建：src/ui (5 文件) + src/manager (3 占位) + src/algo (空目录) + config + utils
+- 主窗口尺寸 1280×800，三栏布局 + 顶部菜单 + 底部事件日志 + 状态栏
+- 所有 widget 用纯 PyQt6 + 手写 QSS 实现（未用 qfluentwidgets，避免 1.5.7 API 不确定性）
+
+### 环境确认
+- pytorch env 全齐：torch 2.5.1+cu121 + PyQt6 6.6.1 + ultralytics 8.4.60 + labelme 5.5.0
+- `mamba activate pytorch` → `python main.py` 一键启动
+- 用户工作流验证：7/7 验收项全部 PASS
+
+### 关键设计决策
+1. 用 moveToThread 模式而非继承 QThread（Day 12 实现 Worker 时按此规范）
+2. Manager 三个类先空壳，signal 声明完整，方法体 pass（Day 12 才填实现）
+3. 所有颜色 / 字体 / 尺寸常量集中到 theme.py + app_config.py，禁止硬编码
+4. 双输出 logger（终端 + UI 事件面板），统一 logging 入口
+5. 选原生 PyQt6 + QSS 而非 qfluentwidgets，避免依赖锁版本踩坑
+
+### 工程化亮点（简历可用）
+- 严格三层架构隔离：UI 不调算法、Manager 不写 widget、Algorithm 无 Qt 依赖
+- 多线程规范文档化（待 Day 12 验证）：UI 主线程，算法 Worker 线程，signal/slot 通信
+- 用户工作流验证：activate_env.bat → python main.py 一键启动
+
+### 待 Day 12 验证
+- Worker 模板（moveToThread + 5 步 connect）
+- 取消机制（_cancel_flag）
+- 异常 emit 不静默
+
+---
+
 ## 日志格式模板
 
 ```markdown

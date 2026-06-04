@@ -7,10 +7,14 @@
 
 ## 当前位置
 
-- **Day**: 5.5
-- **阶段**: Week 2 U-Net 分割
-- **上次 session 结束于**: Day 5 完成，test=0.745，Insight #2/#3 已写
-- **今天目标**: Day 5.5 人工标注 30 张 test mask（U-Net 评测基准）
+- **Day**: Week 3 Day 11 入口
+- **阶段**: PyQt6 环境就绪，待开始主窗口骨架
+- **上次 session 结束于**:
+  - pytorch env 全部装齐（PyQt6 + torch + ultralytics + labelme）
+  - base 清理 -220 个包，spyder 移除
+  - auto_activate_base = False
+  - DEVLOG Insight #5 完整记录
+- **今天目标**: [明天] Day 11 SCADA 风主窗口骨架
 
 ---
 
@@ -19,12 +23,18 @@
 - [x] Week 1 (Day 1-5) 完成
 - [x] Day 5.5 人工标注 30 张 polygon mask（LabelMe 手动完成）
 - [x] Week 2 U-Net: baseline+both refined, best = baseline IoU=0.413, Insight #4 已写
+- [x] Day 11 环境迁移完成
+- [x] PyQt6 6.6.1 + Qt6 6.6.3 + Fluent 1.5.7 装齐 pytorch env
+- [x] base 环境清理（-220 包）
+- [x] 关闭 base 自动激活
+- [x] DEVLOG Insight #5
+- [x] requirements.txt + CONSTRAINTS.md 同步
 
 ---
 
 ## 进行中
 
-（Week 1 完成，准备 Week 2 U-Net）
+- 待开始: Day 11 PyQt6 主窗口骨架（SCADA 风）
 
 ---
 
@@ -39,6 +49,9 @@
 （决策点出现时追加到这里。例如：）
 - Day 2: small 档 bbox 数 = 447（10.7%），但 4 类不足 30 个 → 分尺度 mAP 仅参考，不强报简历
 - Day 2.5: train.txt sha256 = `26dac896fb2e21bfd89550ebf419e5ca9388e1cdc455df9a51cdc2ab895c88fa`（split 固定后填）
+- Day 11: 选择产品定位 B（工业 SCADA 风）
+- Day 11: 选择"迁移到 pytorch env"而非"DLL 补丁"
+- Day 11: spyder 不再使用，统一改 PyCharm
 
 ---
 
@@ -49,8 +62,8 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Week 1 结束。Test set mAP@0.5 = 0.745。crazing 为主要瓶颈（0.291）。
-Week 2 入口：U-Net 分割 —— 弱监督伪 mask（bbox+Otsu）→ 训练 → vs 人工 mask 绝对评测。
+Day 11 环境迁移完成。pytorch env 装齐 PyQt6 + torch + ultralytics + labelme。
+base 清理 -220 包。下一步：PyQt6 SCADA 风主窗口骨架。
 
 ---
 
@@ -73,6 +86,18 @@ Week 2 入口：U-Net 分割 —— 弱监督伪 mask（bbox+Otsu）→ 训练 �
 | 16-20 | 16-21h | - | - |
 
 **累计预算**：约 70-90 小时分散到 20 天，每天 3-5 小时。
+
+---
+
+## 技术债 / 未来打磨清单
+
+以下项不影响 Day 11 验收，但需在 Day 12+ 或 Week 4 重构时处理：
+
+1. [Day 12-13] 左侧图像列表按类别分组（当前按字母排序，crazing_* 全堆前面）
+2. [Day 12-13] 状态栏增加 GPU 使用率 / 当前文件 / 推理耗时显示
+3. [Day 15] 右侧 CONTROL PANEL 下方空白填入系统监控小面板（SCADA 风必备）
+4. [Week 4 重构] control_panel.py 259 行，拆出 _qss.py 单独管理 QSS 样式
+5. [Optional] activate_env.bat → activate_env.ps1（PowerShell 版本，可选）
 
 ---
 
