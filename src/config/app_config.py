@@ -53,5 +53,22 @@ CLASS_COLORS = [
 # ── 检测框渲染 ──────────────────────────────────────────────
 DETECTION_LINE_WIDTH = 2
 
+# ── per-class 置信度阈值（Day 13） ─────────────────────────
+# Day 12 发现 crazing 类 conf 天然偏低（top~0.23），全局阈值 0.25 导致漏检。
+# 推理用全局最低值(0.05)拿所有候选，后处理按类别阈值过滤。
+PER_CLASS_CONF = {
+    "crazing": 0.05,
+    "inclusion": 0.20,
+    "patches": 0.20,
+    "pitted_surface": 0.15,
+    "rolled-in_scale": 0.10,
+    "scratches": 0.20,
+}
+
+# ── 批处理 ─────────────────────────────────────────────────
+BATCH_EMIT_EVERY = 10
+MAX_BATCH_FILES = 5000  # 单次批处理文件数上限，超限弹警告
+
 # ── 报表 ──────────────────────────────────────────────────
 REPORT_DIR = PROJECT_ROOT / "results"
+BATCH_OUTPUT_DIR = REPORT_DIR / "batch_runs"

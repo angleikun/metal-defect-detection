@@ -2,11 +2,13 @@
 
 属于 Algorithm 层——纯算法，零 Qt 依赖。
 将 ultralytics 原始输出转换为 UI 可直接使用的 dict。
+
+Day 13: 新增 per-class threshold 过滤 (_filter_by_per_class)。
 """
 
 import numpy as np
 
-from src.config.app_config import CLASS_NAMES, CLASS_COLORS
+from src.config.app_config import CLASS_NAMES, CLASS_COLORS, PER_CLASS_CONF
 
 
 def get_box_color(class_id: int) -> str:
@@ -42,6 +44,7 @@ def extract_detections(
     image_shape: tuple[int, int],
     inference_time_ms: float,
     cancelled: bool = False,
+    per_class_conf: dict | None = None,
 ) -> dict:
     """从 ultralytics.Results 提取结构化检测结果。
 
@@ -50,17 +53,12 @@ def extract_detections(
         image_shape: 原始图像 (height, width)
         inference_time_ms: 推理耗时（毫秒）
         cancelled: 是否被取消
+        per_class_conf: 可选，如 {"crazing": 0.05, ...}，按类别阈值过滤 box。
+                        None 时不启用过滤（Day 12 行为）。
 
     Returns:
-        dict:
-            "boxes": [[x1,y1,x2,y2], ...]   — xyxy 像素坐标（float）
-            "classes": [int, ...]             — 类别 ID
-            "scores": [float, ...]            — 置信度
-            "class_names": [str, ...]         — 类别名称
-            "inference_time_ms": float        — 推理耗时
-            "num_detections": int             — 检测数
-            "image_shape": (int, int)         — 图像尺寸
-            "cancelled": bool                 — 是否被取消
+        dict with keys: boxes, classes, scores, class_names,
+                        inference_time_ms, num_detections, image_shape, cancelled
     """
     if cancelled or ultralytics_result is None or ultralytics_result.boxes is None:
         return _empty_result(image_shape, inference_time_ms, cancelled)
@@ -77,6 +75,12 @@ def extract_detections(
     scores = confs.astype(float).tolist() if len(confs) > 0 else []
     names = [get_class_name(c) for c in classes]
 
+    # Day 13: per-class threshold 过滤
+    if per_class_conf is not None and len(boxes) > 0:
+        boxes, classes, scores, names = _filter_by_per_class(
+            boxes, classes, scores, names, per_class_conf
+        )
+
     return {
         "boxes": boxes,
         "classes": classes,
@@ -87,6 +91,34 @@ def extract_detections(
         "image_shape": image_shape,
         "cancelled": cancelled,
     }
+
+
+def _filter_by_per_class(
+    boxes: list,
+    classes: list,
+    scores: list,
+    class_names: list,
+    per_class_conf: dict,
+) -> tuple[list, list, list, list]:
+    """按 per-class 阈值过滤检测框。
+
+    只保留 score >= per_class_conf.get(class_name, 0.25) 的 box。
+    """
+    kept = []
+    for i, name in enumerate(class_names):
+        threshold = per_class_conf.get(name, 0.25)
+        if scores[i] >= threshold:
+            kept.append(i)
+
+    if len(kept) == len(boxes):
+        return boxes, classes, scores, class_names
+
+    return (
+        [boxes[i] for i in kept],
+        [classes[i] for i in kept],
+        [scores[i] for i in kept],
+        [class_names[i] for i in kept],
+    )
 
 
 def _empty_result(

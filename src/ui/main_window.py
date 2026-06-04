@@ -9,12 +9,15 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QSplitter,
     QListWidget, QListWidgetItem, QStatusBar, QLabel,
+    QFileDialog, QMessageBox,
 )
 
 from src.config.app_config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, IMAGE_DIR, YOLO_BEST,
+    PER_CLASS_CONF, BATCH_OUTPUT_DIR,
 )
 from src.manager.inference_manager import InferenceManager
+from src.manager.batch_manager import BatchManager
 from src.ui.theme import (
     BACKGROUND, SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY,
     GREEN_OK, RED_ALARM, YELLOW_WARNING, CYAN_INFO,
@@ -60,6 +63,7 @@ class MainWindow(QMainWindow):
         self._log_panel = None
         self._status_label = None
         self._current_bgr: np.ndarray | None = None
+        self._batch_manager: BatchManager | None = None
 
         self._build_menu_bar()
         self._build_central()
@@ -86,6 +90,7 @@ class MainWindow(QMainWindow):
         self._control_panel.detect_clicked.connect(self._on_detect)
         self._control_panel.stop_clicked.connect(self._on_stop)
         self._control_panel.clear_clicked.connect(self._on_clear_boxes)
+        self._control_panel.batch_clicked.connect(self._on_batch_start)
 
     def _set_status(self, text: str, color: str) -> None:
         """更新状态栏文字和颜色。"""
@@ -97,6 +102,18 @@ class MainWindow(QMainWindow):
     def _on_model_loaded(self, ok: bool) -> None:
         if ok:
             self._set_status("● 模型就绪", CYAN_INFO)
+            self._init_batch_manager()
+
+    def _init_batch_manager(self) -> None:
+        """模型加载后创建 BatchManager（共享 detector 引用）。"""
+        if self._batch_manager is not None:
+            return
+        detector = self._inference_manager._detector
+        self._batch_manager = BatchManager(detector, self)
+        self._batch_manager.batch_progress.connect(self._on_batch_progress)
+        self._batch_manager.batch_done.connect(self._on_batch_done)
+        self._batch_manager.batch_cancelled.connect(self._on_batch_cancelled)
+        self._batch_manager.batch_error.connect(self._on_batch_error)
 
     # ── 菜单栏 ──────────────────────────────────────────────
 
@@ -107,7 +124,7 @@ class MainWindow(QMainWindow):
 
         file_menu = mb.addMenu("文件")
         file_menu.addAction(self._act("打开图像...", "Ctrl+O", log("打开图像...")))
-        file_menu.addAction(self._act("打开文件夹...", "Ctrl+Shift+O", log("打开文件夹...")))
+        file_menu.addAction(self._act("打开文件夹...", "Ctrl+Shift+O", self._on_open_folder))
         file_menu.addSeparator()
         file_menu.addAction(self._act("导出报表...", "Ctrl+E", log("导出报表...")))
         file_menu.addSeparator()
@@ -240,8 +257,11 @@ class MainWindow(QMainWindow):
         self._inference_manager.detect(self._current_bgr, conf, iou)
 
     def _on_stop(self) -> None:
-        """停止按钮 → 取消当前推理。"""
-        self._inference_manager.stop()
+        """停止按钮 → 取消当前推理/批处理。"""
+        if self._batch_manager and self._batch_manager.is_busy():
+            self._batch_manager.stop()
+        else:
+            self._inference_manager.stop()
         self._set_status("● 停止中...", YELLOW_WARNING)
 
     def _on_clear_boxes(self) -> None:
@@ -272,3 +292,70 @@ class MainWindow(QMainWindow):
         logger.error(f"Detection error: {msg}")
         self._set_status(f"● 错误: {msg}", RED_ALARM)
         self._control_panel.set_detect_enabled(True)
+
+    # ── 批处理事件（Day 13） ──────────────────────────────
+
+    def _on_open_folder(self) -> None:
+        """打开文件夹对话框 → 启动批处理。"""
+        dlg = QFileDialog(self, "选择图像文件夹")
+        dlg.setFileMode(QFileDialog.FileMode.Directory)
+        dlg.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        if dlg.exec() == QFileDialog.DialogCode.Accepted:
+            folder = dlg.selectedFiles()[0]
+            self._start_batch(folder)
+
+    def _on_batch_start(self) -> None:
+        """批处理按钮 → 打开文件夹对话框。"""
+        self._on_open_folder()
+
+    def _start_batch(self, folder_path: str,
+                     extensions: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".bmp")) -> None:
+        """启动批处理。"""
+        if self._batch_manager is None:
+            self._set_status("● 模型未加载", RED_ALARM)
+            return
+        if self._batch_manager.is_busy():
+            logger.warning("Batch already in progress")
+            return
+
+        conf = min(PER_CLASS_CONF.values())
+        iou = self._control_panel.get_iou_threshold()
+        self._control_panel.set_batch_mode(True)
+        self._set_status(f"● 批处理中: {folder_path}", CYAN_INFO)
+        logger.info(f"批处理开始: 文件夹={folder_path}")
+        self._batch_manager.run_batch(
+            folder_path, conf, iou,
+            per_class_conf=PER_CLASS_CONF, extensions=extensions,
+        )
+
+    def _on_batch_progress(self, completed: int, total: int, filename: str) -> None:
+        """批处理进度 → 进度条 + 状态栏。"""
+        self._control_panel.update_batch_progress(completed, total, filename)
+        if completed % 50 == 0 or completed == total:
+            pct = int(completed / total * 100)
+            self._set_status(f"● 批处理: {completed}/{total} ({pct}%)", CYAN_INFO)
+
+    def _on_batch_done(self, summary: dict) -> None:
+        """批处理完成。"""
+        t = summary["total"]
+        d = summary["defect_count"]
+        avg = summary["avg_time_ms"]
+        csv_path = summary["csv_path"]
+        self._control_panel.set_batch_mode(False)
+        self._set_status(f"● 批处理完成: {d}/{t} 有缺陷, avg {avg:.1f}ms", GREEN_OK)
+        logger.info(f"批处理完成: {d}/{t} 张有缺陷, avg {avg:.1f}ms, csv={csv_path}")
+
+    def _on_batch_cancelled(self, count: int, csv_path: str) -> None:
+        """批处理被取消。"""
+        self._control_panel.set_batch_mode(False)
+        self._set_status(f"● 已取消 (已处理 {count} 张)", YELLOW_WARNING)
+        if csv_path:
+            logger.info(f"批处理已取消 (已处理 {count} 张)，部分结果: {csv_path}")
+        else:
+            logger.info(f"批处理已取消 (已处理 {count} 张)")
+
+    def _on_batch_error(self, msg: str) -> None:
+        """批处理异常。"""
+        self._control_panel.set_batch_mode(False)
+        self._set_status(f"● 批处理错误: {msg}", RED_ALARM)
+        logger.error(f"批处理错误: {msg}")

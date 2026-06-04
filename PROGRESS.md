@@ -7,13 +7,14 @@
 
 ## 当前位置
 
-- **Day**: Week 3 Day 13 入口
-- **阶段**: 单图检测 + 多线程 Worker 完成，待批处理 + per-class threshold
+- **Day**: Week 3 Day 14 入口
+- **阶段**: 批处理 + per-class threshold 完成，待报表生成
 - **上次 session 结束于**:
-  - Day 12 端到端检测管线跑通，GPU 稳态 21.5ms
-  - crazing / inclusion 两类端到端验证通过，5/5 验收
-  - DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
-- **今天目标**: Day 13 批处理 Worker + per-class conf threshold
+  - Day 13 1800 张批处理 33.7s (17.3ms/img)，取消延迟 19ms
+  - per-class threshold 全 6 类验证通过（每类 300 张精确）
+  - cancel-CSV 修复 + MAX_BATCH_FILES 保护落地
+  - DEVLOG Insight #8 (rglob+防呆), #9 (取消写部分 CSV) 记录
+- **今天目标**: Day 14 报表 HTML/PDF 生成 + 可视化
 
 ---
 
@@ -24,6 +25,7 @@
 - [x] Week 2 U-Net: baseline+both refined, best = baseline IoU=0.413, Insight #4 已写
 - [x] Day 11 环境迁移完成
 - [x] Day 12: 单图检测 + 多线程 Worker 实战完成
+- [x] Day 13: 批处理 Worker + per-class threshold + 1800 张全验完成
 - [x] GPU 推理稳态 21.5ms，crazing/inclusion 端到端验证通过
 - [x] DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
 - [x] PyQt6 6.6.1 + Qt6 6.6.3 + Fluent 1.5.7 装齐 pytorch env
@@ -36,7 +38,7 @@
 
 ## 进行中
 
-- 待开始: Day 13 批处理 Worker + per-class threshold
+- 待开始: Day 14 报表 HTML/PDF 生成 + 可视化
 
 ---
 
@@ -64,10 +66,12 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Day 12 单图检测 + 多线程 Worker 实战完成。YOLO GPU 稳态 21.5ms，
-crazing 2 boxes / inclusion 5 boxes 端到端验证通过。5 步 connect 套路落地。
-发现 ultralytics 8.x CUDA 不自动绑定（Insight #6），crazing conf 阈值偏低（Insight #7）。
-下一步：Day 13 批处理 Worker + per-class conf threshold。
+Day 13 批处理 Worker + per-class threshold + 1800 张全量验证完成。
+GPU 批处理 1800 张耗时 33.7s（17.3ms/img），取消延迟 19ms。
+per-class threshold 全 6 类验证通过，每类 300 张精确。取消写 _cancelled CSV。
+MAX_BATCH_FILES=5000 保护 + 空文件夹弹窗落地。
+DEVLOG Insight #8 (rglob+防呆), #9 (取消写部分 CSV)。
+下一步：Day 14 报表 HTML/PDF 生成 + 可视化。
 
 ---
 
@@ -104,6 +108,8 @@ crazing 2 boxes / inclusion 5 boxes 端到端验证通过。5 步 connect 套路
 5. [Optional] activate_env.bat → activate_env.ps1（PowerShell 版本，可选）
 6. [Day 13] 实现 per-class conf threshold（crazing 0.05 / 其他 0.20）
 7. [Day 13+] 添加 GPU/显存监控显示到状态栏
+8. [Day 14] 报表 HTML/PDF 生成 from CSV
+9. [Day 14+] CSV → matplotlib 类别分布可视化
 
 ---
 

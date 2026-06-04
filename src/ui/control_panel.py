@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QSlider,
     QHBoxLayout,
     QGroupBox,
+    QProgressBar,
     QSizePolicy,
 )
 
@@ -55,6 +56,7 @@ class ControlPanel(QWidget):
     detect_clicked = pyqtSignal()
     stop_clicked = pyqtSignal()
     clear_clicked = pyqtSignal()
+    batch_clicked = pyqtSignal()  # Day 13: 批处理按钮
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -94,7 +96,30 @@ class ControlPanel(QWidget):
         self._btn_clear.clicked.connect(self._on_clear)
         btn_layout.addWidget(self._btn_clear)
 
+        self._btn_batch = self._make_button("▣  批量检测", CYAN_INFO)
+        self._btn_batch.clicked.connect(self._on_batch)
+        btn_layout.addWidget(self._btn_batch)
+
         layout.addWidget(btn_group)
+
+        # ── 批处理进度条（Day 13） ────────────────────────
+        self._batch_progress = QProgressBar()
+        self._batch_progress.setRange(0, 100)
+        self._batch_progress.setValue(0)
+        self._batch_progress.setTextVisible(True)
+        self._batch_progress.setFormat("")
+        self._batch_progress.setStyleSheet(self._progress_style())
+        self._batch_progress.setFixedHeight(20)
+        self._batch_progress.hide()
+        layout.addWidget(self._batch_progress)
+
+        self._batch_status = QLabel("")
+        self._batch_status.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-family: {FONT_FAMILY}; "
+            f"font-size: {FONT_SIZE_PANEL - 2}px;"
+        )
+        self._batch_status.hide()
+        layout.addWidget(self._batch_status)
 
         # ── 滑块组 ────────────────────────────────────────
         slider_group = QGroupBox("参数")
@@ -140,6 +165,11 @@ class ControlPanel(QWidget):
         """清除按钮 → emit clear_clicked。"""
         logger.info("ControlPanel: 清除按钮点击")
         self.clear_clicked.emit()
+
+    def _on_batch(self) -> None:
+        """批量检测按钮 → emit batch_clicked。"""
+        logger.info("ControlPanel: 批量检测按钮点击")
+        self.batch_clicked.emit()
 
     # ── 滑块回调（仅日志） ────────────────────────────────
 
@@ -262,6 +292,33 @@ class ControlPanel(QWidget):
         """重置统计面板为初始状态。"""
         self._stats_label.setText("等待检测...")
 
+    # ── Day 13 批处理方法 ──────────────────────────────────
+
+    def update_batch_progress(self, completed: int, total: int, filename: str) -> None:
+        """更新批处理进度条和状态文字。"""
+        pct = int(completed / total * 100) if total > 0 else 0
+        self._batch_progress.setValue(pct)
+        self._batch_progress.setFormat(f"{completed}/{total} — {filename}")
+        self._batch_status.setText(f"处理中: {filename}")
+
+    def set_batch_mode(self, active: bool) -> None:
+        """切换批处理模式：显示/隐藏进度条，禁用/启用按钮。"""
+        if active:
+            self._batch_progress.show()
+            self._batch_status.show()
+            self._batch_progress.setValue(0)
+            self._batch_progress.setFormat("准备中...")
+            self._batch_status.setText("")
+            self._btn_detect.setEnabled(False)
+            self._btn_batch.setEnabled(False)
+            self._btn_clear.setEnabled(False)
+        else:
+            self._batch_progress.hide()
+            self._batch_status.hide()
+            self._btn_detect.setEnabled(True)
+            self._btn_batch.setEnabled(True)
+            self._btn_clear.setEnabled(True)
+
     # ── 样式 ──────────────────────────────────────────────
 
     @staticmethod
@@ -312,5 +369,23 @@ class ControlPanel(QWidget):
             }}
             QSlider::add-page:horizontal {{
                 background: {BORDER};
+            }}
+        """
+
+    @staticmethod
+    def _progress_style() -> str:
+        return f"""
+            QProgressBar {{
+                background-color: {SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER};
+                border-radius: 2px;
+                text-align: center;
+                font-family: {FONT_FAMILY};
+                font-size: {FONT_SIZE_PANEL - 2}px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {CYAN_INFO};
+                border-radius: 1px;
             }}
         """

@@ -2,16 +2,21 @@
 
 属于 Algorithm 层——纯算法，零 Qt 依赖。
 对 ultralytics YOLO 做薄封装，供 InferenceWorker 在子线程调用。
+
+Day 12 修复：显式指定 device，避免 YOLO 默认加载到 CPU。
+Day 13: 新增 detect() 便捷方法（predict + per-class 后处理）。
 """
 
 import time
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 from ultralytics import YOLO
 
-from src.config.app_config import MAX_DET
+from src.config.app_config import MAX_DET, PER_CLASS_CONF
+from src.algo.postprocess import extract_detections
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -89,6 +94,46 @@ class YoloDetector:
         )
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         return results[0], elapsed_ms
+
+    def detect(
+        self,
+        image_path: str | Path,
+        conf: float | None = None,
+        iou: float = 0.45,
+        per_class_conf: dict | None = None,
+    ) -> dict:
+        """便捷方法：读图 → 推理 → per-class 后处理 → 返回干净 dict。
+
+        Day 13 新增。供批处理 Worker 和快速测试使用。
+
+        Args:
+            image_path: 图像文件路径
+            conf: 推理置信度阈值。None 时自动用 min(PER_CLASS_CONF.values())
+            iou: NMS IoU 阈值
+            per_class_conf: per-class 阈值过滤，None 时默认用 PER_CLASS_CONF
+
+        Returns:
+            extract_detections() 格式的 dict
+        """
+        # 推理用全局最低 conf 拿所有候选
+        if conf is None:
+            conf = min(PER_CLASS_CONF.values())
+        if per_class_conf is None:
+            per_class_conf = PER_CLASS_CONF
+
+        img = cv2.imread(str(image_path))
+        if img is None:
+            return {
+                "boxes": [], "classes": [], "scores": [], "class_names": [],
+                "inference_time_ms": 0.0, "num_detections": 0,
+                "image_shape": (0, 0), "cancelled": False,
+            }
+
+        raw_result, elapsed_ms = self.predict(img, conf=conf, iou=iou)
+        return extract_detections(
+            raw_result, img.shape[:2], elapsed_ms,
+            per_class_conf=per_class_conf,
+        )
 
     @property
     def model(self):

@@ -23,6 +23,9 @@ runs/
 wandb/
 *.log
 
+# Batch run artifacts (generated CSVs)
+results/batch_runs/
+
 # IDE
 .vscode/
 .idea/
