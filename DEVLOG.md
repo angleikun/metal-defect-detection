@@ -749,3 +749,48 @@ base 清理回归 conda 自身（-220 个包）。教训：Python 项目从 day 
 ```
 
 ---
+
+## Day 13: 批处理 Worker + per-class threshold + 全量验证 — 2026-06-04
+
+### 完成内容
+- src/manager/_batch_worker.py (151 行) - BatchWorker 含取消 + EMIT_EVERY=10
+- src/manager/_csv_writer.py (74 行) - 零 Qt 依赖的 CSV 写入工具
+- src/manager/batch_manager.py 重写 (204 行) - 5 步 connect + 文件夹扫描 + 安全检查
+- src/algo/yolo_detector.py + postprocess.py - per-class threshold 后处理
+- src/ui/main_window.py + control_panel.py - 进度条 + 文件夹对话框 + 批处理事件
+- 全量验证：1800 张 33.2s（17.1ms/img），取消延迟 18ms
+
+### 实测数据（NEU-DET 完整数据集 1800 张）
+- 总耗时 33.2s（理论下限 30.8s，开销 8%）
+- 平均推理 17.1ms/img（比 Day 12 单图 21.5ms 还快——warmup 摊销）
+- 进度 emit 180 次（严格 EMIT_EVERY=10）
+- 缺陷检出率 1798/1800 (99.9%)
+- 取消延迟 18ms（11/11 验证稳定）
+- 每类 300 张精确（rglob 递归扫描正确）
+
+### Insight #8: rglob 递归扫描 + MAX_BATCH_FILES 防呆保护
+- NEU-DET 三级嵌套目录结构（train/images/{class}/），glob 找不到子目录文件
+- 初版实现 rglob 递归扫描后未加边界保护，风险：用户选 D:\ 会扫整盘
+- 修复：加 MAX_BATCH_FILES=5000 上限 + 空文件夹弹 info 对话框
+- 实测：MAX_BATCH_FILES=100 + 1800 张文件夹 → 正确弹 warning + Yes/No 处理 OK
+- 教训：批处理工具必须有"防呆"边界，不信任用户输入
+
+### Insight #9: 取消时写部分 CSV（用户耗时不归零）
+- 初版实现：取消即丢弃，已处理结果不写
+- 修复：取消时写带 _cancelled 后缀的 CSV，CSV header + 已处理行
+- 实测：327 张处理后取消 → 328 行 CSV，0 截断
+- 工程原则：GPU 推理是用户投入的真实资源，取消不应归零
+
+### 多线程规范深化验证（长循环场景）
+1. ✅ _cancel_flag 每张图开头检查（取消延迟 18ms 验证）
+2. ✅ EMIT_EVERY=10 平衡进度反馈与 signal 风暴（180 次 vs 1800 次，省 10×）
+3. ✅ CSV 写入在 Worker 线程（不阻塞主线程）
+4. ✅ cancelled signal 与 error signal 分离（取消不是异常）
+5. ✅ 1800 张长循环无 GPU 显存泄漏（thread.deleteLater 正确）
+
+### 简历金句
+"实现 NEU-DET 1800 张批处理工具：GPU 端到端 33.2s（17.1ms/img），主线程零卡顿，
+取消延迟 18ms。设计 EMIT_EVERY=10 减少跨线程 signal 风暴 10×。
+per-class conf threshold 解决细粒度类别置信度分布差异。"
+
+---
