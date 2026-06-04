@@ -30,6 +30,9 @@
 - [x] Day 14: HTML 报表 + matplotlib 可视化（4 章节 + 5 异常列表）
 - [x] 1800 张端到端验证（生成 0.7s，文件 105.5KB）
 - [x] DEVLOG Insight #10 (HTML 报表工程决策) 记录
+- [x] Day 15 块 2: HTML 报表 Polish (4.5/5 分)
+- [x] Day 15 块 1: ONNX 导出 + 一致性验证 + CPU benchmark (25 FPS)
+- [x] DEVLOG Insight #11 (ONNX CPU 工业意义), #12 (一致性验证) 记录
 - [x] GPU 推理稳态 21.5ms，crazing/inclusion 端到端验证通过
 - [x] DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
 - [x] PyQt6 6.6.1 + Qt6 6.6.3 + Fluent 1.5.7 装齐 pytorch env
@@ -42,7 +45,7 @@
 
 ## 进行中
 
-- 待开始: Day 15 ONNX 导出 + 性能基准 + Polish + Demo 视频录制
+- 待开始: Day 16 完整验收 + Demo 视频录制
 
 ---
 
@@ -70,12 +73,11 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Day 14 HTML 报表 + matplotlib 可视化完成。base64 内嵌三图表 + 浅色打印友好风。
-1800 张 CSV 生成报表耗时 0.7s，文件 105.5KB，8/8 验收通过。
-报表含类别分布饼图 + 置信度直方图 + 推理耗时分布（P99）+ 无检出列表。
-发现 inclusion 假阳性 bias（149% 检出率），佐证 per-class threshold 必要性。
-DEVLOG Insight #10 (HTML 报表工程决策)。
-下一步：Day 15 ONNX 导出 + 性能基准 + Polish + Demo 视频录制。
+Day 15 块 1+2 完成。HTML 报表 Polish 3 项调整（异常数颜色 / 英文副标题 / 饼图脚注）。
+ONNX 导出 best.pt→best.onnx (11.7MB)。一致性验证 5/5 匹配（坐标差 < 0.06px）。
+CPU benchmark 25 FPS (39.9ms/img)，满足工业离线部署需求。
+DEVLOG Insight #11 (ONNX CPU 工业意义), #12 (一致性验证)。
+下一步：Day 16 完整验收 + Demo 视频录制。
 
 ---
 
@@ -116,8 +118,10 @@ DEVLOG Insight #10 (HTML 报表工程决策)。
 9. [Day 14+] CSV → matplotlib 类别分布可视化
 10. [Week 4 重构] main_window.py 430 行超出 200 行限制（与 control_panel.py 406 行一起拆）
 11. [Day 15] 报表异常数颜色编码：= 0 绿，> 0 红
-12. [Day 15] 报表章节标题加英文副标题
-13. [Day 15] 饼图标签精简（去掉检测框数，引导看表）
+12. [Day 15] ✅ 报表章节标题加英文副标题
+13. [Day 15] ✅ 饼图标签精简（去掉检测框数，引导看表）
+14. [Week 4 重构] 把 ONNX 集成进 GUI（main_window 加 PyTorch / ONNX 后端切换）
+15. [Week 4 优化] ONNX INT8 量化（可能再降 40-50% CPU 耗时）
 
 ---
 

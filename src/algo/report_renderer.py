@@ -75,6 +75,7 @@ def render_html_report(
     avg_time = summary["avg_time_ms"]
     total_time = summary["total_time_ms"]
     error_count = summary["error_count"]
+    error_color = "#1a7f37" if error_count == 0 else "#cf222e"  # Day 15 polish
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -95,6 +96,9 @@ def render_html_report(
         padding-bottom: 12px; margin-bottom: 8px;
     }}
     h2 {{ color: #1f2328; font-size: 18px; margin: 28px 0 12px; }}
+    .subtitle {{ font-size: 0.7em; color: #6e7781; font-weight: 400; }}
+    .chart-note {{ font-size: 0.85em; color: #6e7781; font-style: italic; text-align: center;
+                   margin: 4px 0 16px; }}
     .meta {{ color: #656d76; font-size: 13px; margin-bottom: 20px; }}
     .stat-row {{ display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }}
     .stat-box {{
@@ -159,26 +163,27 @@ def render_html_report(
     </div>
     <div class="stat-box">
         <div class="label">异常数</div>
-        <div class="value{' defect' if error_count > 0 else ''}">{error_count}</div>
+        <div class="value" style="color: {error_color}">{error_count}</div>
     </div>
 </div>
 
-<h2>1. 类别检出分布</h2>
+<h2>1. 类别检出分布 <span class="subtitle">Class Distribution</span></h2>
 <img class="chart" src="data:image/png;base64,{pie_base64}" alt="类别分布饼图">
+<p class="chart-note">饼图按检测框数统计。每张图可能包含多个同类或不同类检测框。详细图像数请见下方表格。</p>
 
-<h2>2. 每类检出统计</h2>
+<h2>2. 每类检出统计 <span class="subtitle">Per-Class Statistics</span></h2>
 <table>
     <tr><th>缺陷类别</th><th class="num">检出图像数</th><th class="num">总检测框数</th><th class="num">平均置信度</th></tr>
     {class_rows_html}
 </table>
 
-<h2>3. 置信度分布</h2>
+<h2>3. 置信度分布 <span class="subtitle">Confidence Distribution</span></h2>
 <img class="chart" src="data:image/png;base64,{conf_base64}" alt="置信度分布直方图">
 
-<h2>4. 推理耗时分布</h2>
+<h2>4. 推理耗时分布 <span class="subtitle">Inference Time Distribution</span></h2>
 <img class="chart" src="data:image/png;base64,{time_base64}" alt="推理耗时分布直方图">
 
-<h2>5. 无检出 / 异常图像</h2>
+<h2>5. 无检出 / 异常图像 <span class="subtitle">Failed Detections</span></h2>
 <table>
     <tr><th>图像文件名</th><th>原因</th></tr>
     {no_defect_html}

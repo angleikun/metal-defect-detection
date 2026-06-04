@@ -78,6 +78,7 @@ def generate_class_distribution_chart(csv_path: str) -> str:
         for lb in labels
     ]
 
+    total_boxes = sum(values)
     fig, ax = plt.subplots(figsize=(7, 5))
     wedges, texts, autotexts = ax.pie(
         values, labels=None, autopct="%1.1f%%",
@@ -85,10 +86,13 @@ def generate_class_distribution_chart(csv_path: str) -> str:
     )
     for at in autotexts:
         at.set_fontsize(9)
-    ax.legend(wedges, [f"{lb} ({v})" for lb, v in zip(labels, values)],
+    # Day 15 polish: legend shows class names only (no detection counts)
+    ax.legend(wedges, labels,
               title="Defect Classes", loc="center left",
               bbox_to_anchor=(1, 0, 0.5, 1))
-    ax.set_title("Defect Class Distribution", fontweight="bold", fontsize=13)
+    ax.set_title(f"Class Distribution by Detection Count "
+                 f"(n={total_boxes} boxes total)",
+                 fontweight="bold", fontsize=13)
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=80, bbox_inches="tight")

@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # ── 模型路径 ──────────────────────────────────────────────
 MODEL_DIR = PROJECT_ROOT / "models"
 YOLO_BEST = MODEL_DIR / "exp4_crazing_focus" / "weights" / "best.pt"
+ONNX_MODEL = MODEL_DIR / "exp4_crazing_focus" / "weights" / "best.onnx"
 UNET_BEST = MODEL_DIR / "unet_baseline_best.pt"
 
 # ── 数据路径 ──────────────────────────────────────────────
