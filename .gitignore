@@ -38,3 +38,12 @@ Thumbs.db
 # Local secrets
 .env
 local_*.json
+
+# ===== 简历 / 求职 / 隐私材料防御 =====
+# 含简历段落、面试策略、求职清单等私密内容
+简历_*
+RESUME_SECTION_*
+*_私密.md
+*_private.md
+_private/
+求职/

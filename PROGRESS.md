@@ -32,6 +32,7 @@
 - [x] DEVLOG Insight #10 (HTML 报表工程决策) 记录
 - [x] Day 15 块 2: HTML 报表 Polish (4.5/5 分)
 - [x] Day 15 块 1: ONNX 导出 + 一致性验证 + CPU benchmark (25 FPS)
+- [x] Day 15 块 4: 简历素材清单 + 简历段落 + 面试 Q&A
 - [x] DEVLOG Insight #11 (ONNX CPU 工业意义), #12 (一致性验证) 记录
 - [x] GPU 推理稳态 21.5ms，crazing/inclusion 端到端验证通过
 - [x] DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
@@ -45,7 +46,7 @@
 
 ## 进行中
 
-- 待开始: Day 16 完整验收 + Demo 视频录制
+- 待开始: Day 16 完整验收 + GitHub 同步
 
 ---
 
@@ -73,11 +74,11 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Day 15 块 1+2 完成。HTML 报表 Polish 3 项调整（异常数颜色 / 英文副标题 / 饼图脚注）。
-ONNX 导出 best.pt→best.onnx (11.7MB)。一致性验证 5/5 匹配（坐标差 < 0.06px）。
-CPU benchmark 25 FPS (39.9ms/img)，满足工业离线部署需求。
-DEVLOG Insight #11 (ONNX CPU 工业意义), #12 (一致性验证)。
-下一步：Day 16 完整验收 + Demo 视频录制。
+Day 15 三块全部完成。HTML Polish 4.5/5 + ONNX 导出 25 FPS + 简历素材双版本。
+12 条 DEVLOG Insight 汇总到 docs/RESUME_MATERIAL.md (192 行)。
+简历段落 5/3 bullet 双版本 + 8 个面试 Q&A 保存到 docs/RESUME_SECTION_NEU_DET.md。
+与 #1 RobotVisionSystem 错位定位（经典视觉+实时 / 深度学习+离线）。
+下一步：Day 16 完整验收 + GitHub README + push。
 
 ---
 

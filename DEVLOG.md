@@ -913,3 +913,19 @@ per-class conf threshold 解决细粒度类别置信度分布差异。"
 - 输出一致性验证：PyTorch ↔ ONNX 同输入下检测框数完全匹配，坐标误差 < 0.06px"
 
 ---
+
+## Day 15 (Part 3): 简历素材整理 — 2026-06-04
+
+### 完成
+- docs/RESUME_MATERIAL.md（192 行）— Insight + 数字 + 技术栈汇总
+- docs/RESUME_SECTION_NEU_DET.md（290 行）— 5/3 bullet 双版本 + 面试 Q&A
+- 与 #1 RobotVisionSystem 项目错位定位：
+  - #1 = 经典视觉 + C++ Qt + 机器人引导
+  - #2 = 深度学习 + Python + 离线质检
+- 8 个高频面试问题及回答要点
+
+### Day 15 整体回顾
+块 1 ONNX 导出 (25 FPS CPU) → 块 2 HTML Polish (4.5/5) → 块 4 简历素材整理
+今日总耗时约 5 小时。
+
+---
