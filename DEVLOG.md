@@ -638,6 +638,53 @@ base 清理回归 conda 自身（-220 个包）。教训：Python 项目从 day 
 - 取消机制（_cancel_flag）
 - 异常 emit 不静默
 
+## Day 12: 单图检测 + 多线程 Worker 实战 — 2026-06-04
+
+### 完成内容
+- src/algo/ 完整实现：yolo_detector.py (85 行) + postprocess.py (105 行)
+- src/manager/ 完整实现：_worker.py (90 行) + inference_manager.py (157 行)
+- src/ui/ 增强：image_viewer.py (+80) + main_window.py (+105) + control_panel.py (+57)
+- 端到端单图检测功能 + 多线程 Worker 模式落地
+
+### 关键工程发现
+
+#### Insight #6: ultralytics 8.x CUDA 不自动绑定
+- 初次实现 Day 12 时推理跑在 CPU（276ms / 200×200 图）
+- 排查发现 ultralytics 8.x 版本 model 默认加载到 CPU，predict() 默认也用 CPU
+- 必须显式 `model.to('cuda')` + `predict(device='cuda')` 才能用 GPU
+- 修复后稳态推理从 276ms → 21.5ms（提速 9.5×）
+- 注意：CUDA warmup 含 kernel 编译，cold start ~1073ms（一次性，可忽略）
+
+#### Insight #7: crazing 类置信度天然偏低，conf=0.25 默认值过滤误删
+- 用 conf=0.25 时 crazing_1.jpg 检测 0 个目标
+- 排查发现 crazing 类整体 top 置信度仅 0.228（Week 1 训练数据决定）
+- 根因：crazing 是 NEU-DET 中纹理弥散类，没有清晰边界，YOLO bbox 难拟合
+- 修复：conf_threshold 默认 0.25 → 0.10
+- 教训：通用 conf 默认值不适合 fine-grained 缺陷分类，应按类别分别设阈值
+
+### 多线程规范落地验证（Day 11 立的规则全部生效）
+1. ✅ Worker 继承 QObject 而非 QThread
+2. ✅ moveToThread 模式正确实施
+3. ✅ 5 步 connect 套路：started→run, finished→on_finished, error→on_error,
+   finished+error→quit, finished→cleanup
+4. ✅ try/except 包裹 run()，异常通过 error signal 发出（不静默）
+5. ✅ _cancel_flag 取消机制（用户验证 PASS）
+6. ✅ thread.quit() + wait() + deleteLater() 完整生命周期
+7. ✅ Algorithm 层零 Qt 依赖（grep "import PyQt" src/algo/ 空结果）
+
+### 简历可用素材
+- "采用三层架构（UI/Manager/Algorithm）+ QThread + signal/slot 多线程模式，
+  GPU 推理稳态 21.5ms，主线程零卡顿。排查 ultralytics 8.x CUDA 不自动绑定坑，
+  GPU 启用后推理提速 9.5×。"
+- "针对 NEU-DET crazing 纹理类置信度天然偏低（top 0.228），将默认 conf 阈值从
+  0.25 调整为 0.10，确保所有 6 类缺陷都能正常检测。"
+
+### Day 13 待处理
+- 按类别分别配置 conf 阈值（per-class threshold，crazing 用 0.05，其他 0.20）
+- 批处理 Worker（不止单图，整个文件夹批量推理）
+- GPU 监控显示（device、显存使用、加到状态栏）
+- 图像列表按类别分组（当前按字母排序）
+
 ---
 
 ## 日志格式模板

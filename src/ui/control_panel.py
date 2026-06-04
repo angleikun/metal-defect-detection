@@ -1,10 +1,10 @@
 """右侧控制面板。
 
 属于 UI 层——提供检测控制按钮和参数滑块。
-当前阶段所有操作仅记录日志，不触发任何算法。
+Day 12 增强：暴露点击信号、阈值读取、统计更新。
 """
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -47,9 +47,14 @@ class ControlPanel(QWidget):
     │  置信度阈值 ────●────  │
     │  IoU 阈值   ────●────  │
     │                      │
-    │  检测结果（占位）      │
+    │  检测结果（动态更新）  │
     └──────────────────────┘
     """
+
+    # ── Day 12 新增信号 ─────────────────────────────────────
+    detect_clicked = pyqtSignal()
+    stop_clicked = pyqtSignal()
+    clear_clicked = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -96,15 +101,15 @@ class ControlPanel(QWidget):
         slider_group.setStyleSheet(self._group_style())
         slider_layout = QVBoxLayout(slider_group)
 
-        self._conf_slider, self._conf_label = self._make_slider(
+        _conf_layout, self._conf_label = self._make_slider(
             "置信度阈值", int(CONF_THRESHOLD * 100), 100
         )
-        slider_layout.addLayout(self._conf_slider)
+        slider_layout.addLayout(_conf_layout)
 
-        self._iou_slider, self._iou_label = self._make_slider(
+        _iou_layout, self._iou_label = self._make_slider(
             "IoU 阈值", int(IOU_THRESHOLD * 100), 100
         )
-        slider_layout.addLayout(self._iou_slider)
+        slider_layout.addLayout(_iou_layout)
 
         layout.addWidget(slider_group)
 
@@ -119,16 +124,22 @@ class ControlPanel(QWidget):
 
         layout.addStretch()
 
-    # ── 按钮回调（仅日志） ────────────────────────────────
+    # ── 按钮回调（emit 信号供 MainWindow 连接） ──────────────
 
     def _on_detect(self) -> None:
-        logger.info("ControlPanel: 检测按钮点击（not implemented）")
+        """检测按钮 → emit detect_clicked。"""
+        logger.info("ControlPanel: 检测按钮点击")
+        self.detect_clicked.emit()
 
     def _on_stop(self) -> None:
-        logger.info("ControlPanel: 停止按钮点击（not implemented）")
+        """停止按钮 → emit stop_clicked。"""
+        logger.info("ControlPanel: 停止按钮点击")
+        self.stop_clicked.emit()
 
     def _on_clear(self) -> None:
-        logger.info("ControlPanel: 清除按钮点击（not implemented）")
+        """清除按钮 → emit clear_clicked。"""
+        logger.info("ControlPanel: 清除按钮点击")
+        self.clear_clicked.emit()
 
     # ── 滑块回调（仅日志） ────────────────────────────────
 
@@ -197,13 +208,59 @@ class ControlPanel(QWidget):
         row.addWidget(lbl)
         row.addWidget(slider)
 
-        # 保存 label 引用用于更新
+        # 保存引用供 getter 使用
         if label_text == "置信度阈值":
+            self._conf_slider = slider
             self._conf_label = lbl
         else:
+            self._iou_slider = slider
             self._iou_label = lbl
 
         return row, lbl
+
+    # ── Day 12 新增方法 ────────────────────────────────────
+
+    def get_conf_threshold(self) -> float:
+        """返回当前置信度阈值（0.0-1.0）。"""
+        return self._conf_slider.value() / 100.0
+
+    def get_iou_threshold(self) -> float:
+        """返回当前 IoU 阈值（0.0-1.0）。"""
+        return self._iou_slider.value() / 100.0
+
+    def update_result_counts(self, detections: dict) -> None:
+        """根据检测结果更新统计面板。"""
+        num = detections.get("num_detections", 0)
+        cancelled = detections.get("cancelled", False)
+        t_ms = detections.get("inference_time_ms", 0.0)
+
+        if cancelled:
+            self._stats_label.setText("检测已取消")
+            return
+
+        if num == 0:
+            self._stats_label.setText(
+                f"未检测到缺陷\n耗时: {t_ms:.1f}ms"
+            )
+            return
+
+        lines = [f"检测到 {num} 个缺陷"]
+        scores = detections.get("scores", [])
+        class_names = detections.get("class_names", [])
+        for i in range(num):
+            name = class_names[i] if i < len(class_names) else "?"
+            score = scores[i] if i < len(scores) else 0.0
+            lines.append(f"  {name}: {score:.2f}")
+        lines.append(f"耗时: {t_ms:.1f}ms")
+        self._stats_label.setText("\n".join(lines))
+
+    def set_detect_enabled(self, enabled: bool) -> None:
+        """启用/禁用检测按钮（推理中禁用防重复点击）。"""
+        self._btn_detect.setEnabled(enabled)
+
+    def reset_stats(self) -> None:
+        """重置统计面板为初始状态。"""
+        self._stats_label.setText("等待检测...")
 
     # ── 样式 ──────────────────────────────────────────────
 

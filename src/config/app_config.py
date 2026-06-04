@@ -24,7 +24,9 @@ WINDOW_HEIGHT = 800
 WINDOW_TITLE = "Metal Defect Detection — SCADA"
 
 # ── 检测阈值（生产模式） ──────────────────────────────────
-CONF_THRESHOLD = 0.25
+# Day 12 修复：crazing 纹理缺陷置信度天然低（top~0.23），
+# 0.25 会导致该类完全漏检。降至 0.10 覆盖低置信度缺陷。
+CONF_THRESHOLD = 0.10
 IOU_THRESHOLD = 0.45
 MAX_DET = 300
 
@@ -47,6 +49,9 @@ CLASS_COLORS = [
     "#E040FB",  # rolled-in_scale— 紫
     "#40C4FF",  # scratches      — 青
 ]
+
+# ── 检测框渲染 ──────────────────────────────────────────────
+DETECTION_LINE_WIDTH = 2
 
 # ── 报表 ──────────────────────────────────────────────────
 REPORT_DIR = PROJECT_ROOT / "results"
