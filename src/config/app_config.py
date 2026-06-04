@@ -72,3 +72,4 @@ MAX_BATCH_FILES = 5000  # 单次批处理文件数上限，超限弹警告
 # ── 报表 ──────────────────────────────────────────────────
 REPORT_DIR = PROJECT_ROOT / "results"
 BATCH_OUTPUT_DIR = REPORT_DIR / "batch_runs"
+REPORT_OUTPUT_DIR = REPORT_DIR / "reports"

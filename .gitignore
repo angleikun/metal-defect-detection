@@ -25,6 +25,7 @@ wandb/
 
 # Batch run artifacts (generated CSVs)
 results/batch_runs/
+results/reports/
 
 # IDE
 .vscode/

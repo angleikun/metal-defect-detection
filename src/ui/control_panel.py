@@ -56,7 +56,8 @@ class ControlPanel(QWidget):
     detect_clicked = pyqtSignal()
     stop_clicked = pyqtSignal()
     clear_clicked = pyqtSignal()
-    batch_clicked = pyqtSignal()  # Day 13: 批处理按钮
+    batch_clicked = pyqtSignal()   # Day 13: 批处理按钮
+    report_clicked = pyqtSignal()  # Day 14: 报表导出按钮
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -99,6 +100,11 @@ class ControlPanel(QWidget):
         self._btn_batch = self._make_button("▣  批量检测", CYAN_INFO)
         self._btn_batch.clicked.connect(self._on_batch)
         btn_layout.addWidget(self._btn_batch)
+
+        self._btn_report = self._make_button("📄 导出报表", TEXT_PRIMARY)
+        self._btn_report.clicked.connect(self._on_report)
+        self._btn_report.setEnabled(False)  # 批处理完成后才激活
+        btn_layout.addWidget(self._btn_report)
 
         layout.addWidget(btn_group)
 
@@ -170,6 +176,15 @@ class ControlPanel(QWidget):
         """批量检测按钮 → emit batch_clicked。"""
         logger.info("ControlPanel: 批量检测按钮点击")
         self.batch_clicked.emit()
+
+    def _on_report(self) -> None:
+        """报表导出按钮 → emit report_clicked。"""
+        logger.info("ControlPanel: 报表导出按钮点击")
+        self.report_clicked.emit()
+
+    def set_report_enabled(self, enabled: bool) -> None:
+        """启用/禁用报表导出按钮。"""
+        self._btn_report.setEnabled(enabled)
 
     # ── 滑块回调（仅日志） ────────────────────────────────
 

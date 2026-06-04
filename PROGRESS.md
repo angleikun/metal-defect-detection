@@ -7,14 +7,14 @@
 
 ## 当前位置
 
-- **Day**: Week 3 Day 14 入口
-- **阶段**: 批处理 + per-class threshold 完成，待报表生成
+- **Day**: Week 3 Day 15 入口
+- **阶段**: 报表导出完成，待 ONNX 导出 + Polish + Demo 录制
 - **上次 session 结束于**:
-  - Day 13 1800 张批处理 33.2s (17.1ms/img)，取消延迟 18ms
-  - per-class threshold 全 6 类验证通过（每类 300 张精确）
-  - cancel-CSV 修复 + MAX_BATCH_FILES 保护落地，11/11 验证通过
-  - DEVLOG Insight #8 (rglob+防呆), #9 (取消写部分 CSV) 记录
-- **今天目标**: Day 14 报表 HTML + 可视化生成
+  - Day 14 HTML 报表 + matplotlib 可视化，1800 张 CSV 生成 0.7s，105.5KB
+  - 端到端批处理→报表→浏览器打开，8/8 验收通过
+  - 发现 inclusion 类 149% 假阳性 bias（模型三类混淆）
+  - DEVLOG Insight #10 (HTML 报表工程决策) 记录
+- **今天目标**: Day 15 ONNX 导出 + 性能基准 + Polish + Demo 视频录制
 
 ---
 
@@ -27,6 +27,9 @@
 - [x] Day 12: 单图检测 + 多线程 Worker 实战完成
 - [x] Day 13: 批处理 Worker + per-class threshold + 1800 张全验完成
 - [x] Day 13 fix: cancel-CSV 写入 + MAX_BATCH_FILES 保护 + 11/11 补充验证
+- [x] Day 14: HTML 报表 + matplotlib 可视化（4 章节 + 5 异常列表）
+- [x] 1800 张端到端验证（生成 0.7s，文件 105.5KB）
+- [x] DEVLOG Insight #10 (HTML 报表工程决策) 记录
 - [x] GPU 推理稳态 21.5ms，crazing/inclusion 端到端验证通过
 - [x] DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
 - [x] PyQt6 6.6.1 + Qt6 6.6.3 + Fluent 1.5.7 装齐 pytorch env
@@ -39,7 +42,7 @@
 
 ## 进行中
 
-- 待开始: Day 14 报表 HTML/PDF 生成 + 可视化
+- 待开始: Day 15 ONNX 导出 + 性能基准 + Polish + Demo 视频录制
 
 ---
 
@@ -67,13 +70,12 @@
 > 2. 明天第一件事做什么？
 > 3. 有没有需要先决定的事？
 
-Day 13 批处理 Worker + per-class threshold + 1800 张全量验证完成。
-GPU 批处理 1800 张耗时 33.2s（17.1ms/img），取消延迟 18ms。
-per-class threshold 全 6 类验证，每类 300 张精确。取消写 _cancelled CSV。
-MAX_BATCH_FILES=5000 保护 + 空文件夹弹窗落地。
-11/11 补充验证全部通过（cancel CSV 内容 + MAX_BATCH_FILES 对话框 + regression）。
-DEVLOG Insight #8 (rglob+防呆), #9 (取消写部分 CSV)。
-下一步：Day 14 报表 HTML 生成 + matplotlib 可视化。
+Day 14 HTML 报表 + matplotlib 可视化完成。base64 内嵌三图表 + 浅色打印友好风。
+1800 张 CSV 生成报表耗时 0.7s，文件 105.5KB，8/8 验收通过。
+报表含类别分布饼图 + 置信度直方图 + 推理耗时分布（P99）+ 无检出列表。
+发现 inclusion 假阳性 bias（149% 检出率），佐证 per-class threshold 必要性。
+DEVLOG Insight #10 (HTML 报表工程决策)。
+下一步：Day 15 ONNX 导出 + 性能基准 + Polish + Demo 视频录制。
 
 ---
 
@@ -112,7 +114,10 @@ DEVLOG Insight #8 (rglob+防呆), #9 (取消写部分 CSV)。
 7. [Day 13+] 添加 GPU/显存监控显示到状态栏
 8. [Day 14] 报表 HTML/PDF 生成 from CSV
 9. [Day 14+] CSV → matplotlib 类别分布可视化
-10. [Week 4 重构] main_window.py 354 行超出 200 行限制（与 control_panel.py 391 行一起拆）
+10. [Week 4 重构] main_window.py 430 行超出 200 行限制（与 control_panel.py 406 行一起拆）
+11. [Day 15] 报表异常数颜色编码：= 0 绿，> 0 红
+12. [Day 15] 报表章节标题加英文副标题
+13. [Day 15] 饼图标签精简（去掉检测框数，引导看表）
 
 ---
 

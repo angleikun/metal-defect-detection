@@ -4,6 +4,8 @@ Day 12 增强：连接 InferenceManager ↔ UI 控件，端到端检测流程。
 import cv2
 import numpy as np
 
+import webbrowser
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
@@ -14,10 +16,11 @@ from PyQt6.QtWidgets import (
 
 from src.config.app_config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, IMAGE_DIR, YOLO_BEST,
-    PER_CLASS_CONF, BATCH_OUTPUT_DIR,
+    PER_CLASS_CONF, BATCH_OUTPUT_DIR, REPORT_OUTPUT_DIR,
 )
 from src.manager.inference_manager import InferenceManager
 from src.manager.batch_manager import BatchManager
+from src.manager.report_manager import ReportManager
 from src.ui.theme import (
     BACKGROUND, SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY,
     GREEN_OK, RED_ALARM, YELLOW_WARNING, CYAN_INFO,
@@ -64,6 +67,7 @@ class MainWindow(QMainWindow):
         self._status_label = None
         self._current_bgr: np.ndarray | None = None
         self._batch_manager: BatchManager | None = None
+        self._report_manager: ReportManager | None = None
 
         self._build_menu_bar()
         self._build_central()
@@ -91,6 +95,7 @@ class MainWindow(QMainWindow):
         self._control_panel.stop_clicked.connect(self._on_stop)
         self._control_panel.clear_clicked.connect(self._on_clear_boxes)
         self._control_panel.batch_clicked.connect(self._on_batch_start)
+        self._control_panel.report_clicked.connect(self._on_export_latest)
 
     def _set_status(self, text: str, color: str) -> None:
         """更新状态栏文字和颜色。"""
@@ -103,6 +108,7 @@ class MainWindow(QMainWindow):
         if ok:
             self._set_status("● 模型就绪", CYAN_INFO)
             self._init_batch_manager()
+            self._init_report_manager()
 
     def _init_batch_manager(self) -> None:
         """模型加载后创建 BatchManager（共享 detector 引用）。"""
@@ -115,6 +121,14 @@ class MainWindow(QMainWindow):
         self._batch_manager.batch_cancelled.connect(self._on_batch_cancelled)
         self._batch_manager.batch_error.connect(self._on_batch_error)
 
+    def _init_report_manager(self) -> None:
+        """创建 ReportManager（零开销，无延迟加载）。"""
+        if self._report_manager is not None:
+            return
+        self._report_manager = ReportManager(self)
+        self._report_manager.report_ready.connect(self._on_report_finished)
+        self._report_manager.report_error.connect(self._on_report_error)
+
     # ── 菜单栏 ──────────────────────────────────────────────
 
     def _build_menu_bar(self) -> None:
@@ -126,7 +140,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._act("打开图像...", "Ctrl+O", log("打开图像...")))
         file_menu.addAction(self._act("打开文件夹...", "Ctrl+Shift+O", self._on_open_folder))
         file_menu.addSeparator()
-        file_menu.addAction(self._act("导出报表...", "Ctrl+E", log("导出报表...")))
+        file_menu.addAction(self._act("导出报表...", "Ctrl+E", self._on_export_report))
         file_menu.addSeparator()
         file_menu.addAction(self._act("退出", "Alt+F4", self.close))
 
@@ -341,7 +355,9 @@ class MainWindow(QMainWindow):
         d = summary["defect_count"]
         avg = summary["avg_time_ms"]
         csv_path = summary["csv_path"]
+        self._batch_csv_path = csv_path  # 保存供报表导出使用
         self._control_panel.set_batch_mode(False)
+        self._control_panel.set_report_enabled(True)  # Day 14: 激活导出按钮
         self._set_status(f"● 批处理完成: {d}/{t} 有缺陷, avg {avg:.1f}ms", GREEN_OK)
         logger.info(f"批处理完成: {d}/{t} 张有缺陷, avg {avg:.1f}ms, csv={csv_path}")
 
@@ -359,3 +375,56 @@ class MainWindow(QMainWindow):
         self._control_panel.set_batch_mode(False)
         self._set_status(f"● 批处理错误: {msg}", RED_ALARM)
         logger.error(f"批处理错误: {msg}")
+
+    # ── 报表导出事件（Day 14） ─────────────────────────────
+
+    def _on_export_report(self) -> None:
+        """菜单导出 → 弹出 QFileDialog 选 CSV → 生成报表。"""
+        dlg = QFileDialog(self, "选择批处理 CSV 文件")
+        dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+        dlg.setNameFilter("CSV 文件 (*.csv)")
+        if dlg.exec() == QFileDialog.DialogCode.Accepted:
+            csv_path = dlg.selectedFiles()[0]
+            self._generate_report(csv_path)
+
+    def _on_export_latest(self) -> None:
+        """控制面板按钮 → 自动选最新 batch CSV → 生成报表。"""
+        csv_path = getattr(self, "_batch_csv_path", None)
+        if not csv_path:
+            # 尝试找最新的 batch CSV
+            import os
+            csv_dir = BATCH_OUTPUT_DIR
+            if csv_dir.is_dir():
+                csv_files = sorted(
+                    csv_dir.glob("batch_*.csv"),
+                    key=os.path.getmtime, reverse=True,
+                )
+                non_cancelled = [f for f in csv_files if "_cancelled" not in f.name]
+                if non_cancelled:
+                    csv_path = str(non_cancelled[0])
+
+        if not csv_path:
+            logger.warning("No batch CSV found for report")
+            self._set_status("● 无可用 CSV，请先运行批处理", YELLOW_WARNING)
+            return
+
+        self._generate_report(csv_path)
+
+    def _generate_report(self, csv_path: str) -> None:
+        """启动报表生成。"""
+        if self._report_manager is None:
+            self._init_report_manager()
+        logger.info(f"导出报表: {csv_path}")
+        self._set_status("● 生成报表中...", CYAN_INFO)
+        self._report_manager.generate_html_report(csv_path)
+
+    def _on_report_finished(self, html_path: str) -> None:
+        """报表生成完成 → 自动打开浏览器。"""
+        self._set_status(f"● 报表已生成: {html_path}", GREEN_OK)
+        logger.info(f"报表已生成: {html_path}")
+        webbrowser.open(f"file:///{html_path}")
+
+    def _on_report_error(self, msg: str) -> None:
+        """报表生成异常。"""
+        self._set_status(f"● 报表错误: {msg}", RED_ALARM)
+        logger.error(f"报表错误: {msg}")

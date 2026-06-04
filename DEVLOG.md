@@ -794,3 +794,65 @@ base 清理回归 conda 自身（-220 个包）。教训：Python 项目从 day 
 per-class conf threshold 解决细粒度类别置信度分布差异。"
 
 ---
+
+## Day 14: HTML 报表 + matplotlib 可视化 — 2026-06-04
+
+### 完成内容
+- src/algo/chart_generator.py (182 行) - matplotlib Agg 后端 + base64 内嵌
+- src/algo/report_renderer.py (263 行) - 浅色风 HTML f-string 模板
+- src/manager/_report_worker.py (67 行) - ReportWorker（QObject 子类）
+- src/manager/report_manager.py (108 行) - 5 步 connect + 线程管理
+- 端到端：批处理 → 选 CSV → Worker 生成 HTML → 浏览器自动打开
+- 1800 张 CSV 生成 HTML 耗时 0.7s，文件大小 105.5 KB
+
+### 实测数据
+- HTML 文件大小 105.5 KB（base64 内嵌 3 张图表）
+- 生成耗时 0.7s（远低于 5s 目标）
+- 主线程零阻塞
+- 单文件可分发（邮件 / U 盘 / 打印）
+
+### 报表内容（已验证）
+- 顶部统计盒：总图像数 / 检出缺陷 / 检出率 / 总耗时 / 平均推理 / 异常数
+- 1. 类别检出分布饼图（含数量标注）
+- 2. 每类检出统计表（含类别色 dot）
+- 3. 置信度分布直方图（6 类按颜色叠加，n 标注）
+- 4. 推理耗时直方图（含 mean 红线 + P99 黄线）
+- 5. 无检出/异常图像列表
+
+### Insight #10: HTML 报表的工程决策
+
+#### 决策 1: base64 内嵌 vs 外部 PNG
+- 选 base64：单文件可分发，邮件直接发，打印友好
+- 代价：HTML 从 ~20KB 增到 ~100KB（可接受）
+
+#### 决策 2: 浅色风 vs SCADA 暗色风
+- HTML 报表选浅色：客户/打印场景需要白底
+- GUI 应用保留 SCADA 暗色：操作员长时间盯屏需要
+
+#### 决策 3: matplotlib Agg 后端
+- 必须 matplotlib.use("Agg") 在 import pyplot 之前
+- 否则 Qt 主线程冲突，GUI 假死或崩溃
+- Worker 线程画图必须用 Agg 后端
+
+### 数据洞察（简历素材）
+
+实测 1800 张批处理报表暴露了模型 bias：
+- inclusion 类 147 张假阳性（149% 检出率）
+- 模型对 inclusion / patches / rolled-in_scale 三类有视觉混淆
+- crazing 置信度集中 0.2-0.4，inclusion/pitted 集中 0.7-0.9
+  → 解释了 Day 13 per-class threshold 的必要性
+
+工程结论：fine-grained 缺陷分类需要按类别校准 conf 阈值，
+不能用单一全局阈值。
+
+### Day 15 polish 清单（已记入技术债）
+- 异常数 = 0 显示绿色，> 0 显示红色
+- 章节标题加英文副标题
+- 饼图标签精简（移除框数，引导用户看表格）
+
+### 简历金句
+"实现 HTML 工业报表导出：matplotlib base64 内嵌 + 浅色打印友好风格，
+单文件可分发。报表包含类别分布饼图、置信度直方图、推理耗时分布（含 P99）、
+无检出列表。1800 张数据生成耗时 0.7s。"
+
+---
