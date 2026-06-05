@@ -160,7 +160,7 @@ def generate_confidence_histogram(csv_path: str) -> str:
             try:
                 class_scores[cls_name].append(float(score_str))
             except ValueError:
-                pass
+                logger.debug(f"skip invalid score {score_str!r} for class {cls_name}")
 
     if not class_scores:
         logger.warning("No valid scores in CSV")
