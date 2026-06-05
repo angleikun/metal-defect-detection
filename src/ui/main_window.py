@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 import webbrowser
+from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
@@ -40,9 +41,6 @@ _MENU_STYLE = f"""
         border-bottom:1px solid {BORDER}; font-family:{FONT_FAMILY};
         font-size:{FONT_SIZE_STATUS}px; }}
     QMenuBar::item:selected {{ background-color:{BACKGROUND}; }}
-    QMenu {{ background-color:{SURFACE}; color:{TEXT_PRIMARY};
-        border:1px solid {BORDER}; font-family:{FONT_FAMILY}; }}
-    QMenu::item:selected {{ background-color:{BACKGROUND}; }}
 """
 
 _LIST_STYLE = f"""
@@ -134,43 +132,140 @@ class MainWindow(QMainWindow):
     def _build_menu_bar(self) -> None:
         mb = self.menuBar()
         mb.setStyleSheet(_MENU_STYLE)
-        log = lambda label: lambda: logger.info(f"Menu: {label}")
 
+        # ── 文件 ────────────────────────────────────────────
         file_menu = mb.addMenu("文件")
-        file_menu.addAction(self._act("打开图像...", "Ctrl+O", log("打开图像...")))
+        file_menu.addAction(self._act("打开图像...", "Ctrl+O", self._on_open_image))
         file_menu.addAction(self._act("打开文件夹...", "Ctrl+Shift+O", self._on_open_folder))
         file_menu.addSeparator()
         file_menu.addAction(self._act("导出报表...", "Ctrl+E", self._on_export_report))
         file_menu.addSeparator()
         file_menu.addAction(self._act("退出", "Alt+F4", self.close))
 
+        # ── 配置 ────────────────────────────────────────────
         cfg_menu = mb.addMenu("配置")
-        cfg_menu.addAction(self._act("模型设置...", None, log("模型设置...")))
-        cfg_menu.addAction(self._act("报警阈值...", None, log("报警阈值...")))
+        cfg_menu.addAction(self._act("模型信息...", None, self._on_model_info))
+        cfg_menu.addAction(self._act("Per-Class 阈值...", None, self._on_threshold_info))
 
+        # ── 视图 ────────────────────────────────────────────
         view_menu = mb.addMenu("视图")
-        view_menu.addAction(self._act("重置布局", None, log("重置布局")))
+        view_menu.addAction(self._act("重置布局", None, self._on_reset_layout))
         view_menu.addAction(self._act("清空日志", None, self._on_clear_log))
 
+        # ── 报警 ────────────────────────────────────────────
         alarm_menu = mb.addMenu("报警")
-        alarm_menu.addAction(self._act("报警历史", None, log("报警历史")))
-        alarm_menu.addAction(self._act("静音报警", None, log("静音报警")))
+        alarm_menu.addAction(self._act("报警历史", None, self._on_alarm_history))
+        self._alarm_mute_action = self._act("静音报警", None, self._on_alarm_mute)
+        self._alarm_mute_action.setCheckable(True)
+        alarm_menu.addAction(self._alarm_mute_action)
 
+        # ── 帮助 ────────────────────────────────────────────
         help_menu = mb.addMenu("帮助")
-        help_menu.addAction(self._act("关于", None, log("关于")))
-        help_menu.addAction(self._act("使用手册", "F1", log("使用手册")))
+        help_menu.addAction(self._act("关于...", None, self._on_about))
+        help_menu.addAction(self._act("GitHub", None, self._on_github))
 
     def _on_clear_log(self) -> None:
         if self._log_panel:
             self._log_panel.clear()
 
-    @staticmethod
-    def _act(text: str, shortcut: str | None, slot) -> QAction:
-        action = QAction(text, None)
+    def _act(self, text: str, shortcut: str | None, slot) -> QAction:
+        action = QAction(text, self)  # parent=self fixes Windows menu invisibility
         if shortcut:
             action.setShortcut(shortcut)
         action.triggered.connect(slot)
         return action
+
+    # ── 菜单回调 ────────────────────────────────────────────
+
+    def _on_open_image(self) -> None:
+        """文件 → 打开图像：QFileDialog 选单张图。"""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "打开图像", "",
+            "Images (*.jpg *.jpeg *.png *.bmp)"
+        )
+        if path:
+            self._current_bgr = cv2.imread(path)
+            if self._current_bgr is None:
+                QMessageBox.warning(self, "错误", f"无法读取图像:\n{path}")
+                return
+            self._image_viewer.load_image(path)
+            self._control_panel.reset_stats()
+            self._set_status(f"● 已打开: {Path(path).name}", GREEN_OK)
+            logger.info(f"打开图像: {path}")
+
+    def _on_model_info(self) -> None:
+        """配置 → 模型信息：弹窗显示当前模型状态。"""
+        ready = self._inference_manager.is_model_ready()
+        if ready:
+            det = self._inference_manager._detector
+            info = (
+                f"模型路径: {det._model_path}\n"
+                f"推理设备: {det.device}\n"
+                f"ONNX 模型: models/exp4_crazing_focus/weights/best.onnx\n"
+                f"ONNX Runtime: 1.23.2 (CPU)"
+            )
+        else:
+            info = "模型尚未加载（首次 detect 时自动加载）"
+        QMessageBox.information(self, "模型信息", info)
+
+    def _on_threshold_info(self) -> None:
+        """配置 → Per-Class 阈值：弹窗显示 6 类置信度阈值。"""
+        from src.config.app_config import PER_CLASS_CONF
+        lines = ["Per-Class Confidence Thresholds:\n"]
+        for cls_name, th in PER_CLASS_CONF.items():
+            lines.append(f"  {cls_name:<20s}  {th:.2f}")
+        QMessageBox.information(self, "Per-Class 置信度阈值", "\n".join(lines))
+
+    def _on_reset_layout(self) -> None:
+        """视图 → 重置布局：恢复三栏默认比例 2:5:3。"""
+        splitter = self.findChild(QSplitter)
+        if splitter:
+            splitter.setStretchFactor(0, 2)
+            splitter.setStretchFactor(1, 5)
+            splitter.setStretchFactor(2, 3)
+            self._set_status("● 布局已重置 (2:5:3)", CYAN_INFO)
+            logger.info("布局已重置")
+
+    def _on_alarm_history(self) -> None:
+        """报警 → 报警历史：弹窗显示信息（报警系统未实现）。"""
+        QMessageBox.information(
+            self, "报警历史",
+            "报警模块尚未实现。\n\n"
+            "计划功能：\n"
+            "  - 缺陷检出即报警（红色状态栏闪烁）\n"
+            "  - 连续 N 张检出同类缺陷 → 升级报警\n"
+            "  - 报警历史 CSV 导出\n\n"
+            "当前阶段可通过批处理 CSV 查看缺陷检出记录。"
+        )
+
+    def _on_alarm_mute(self) -> None:
+        """报警 → 静音报警：切换静音状态。"""
+        muted = self._alarm_mute_action.isChecked()
+        if muted:
+            self._set_status("● 报警已静音", YELLOW_WARNING)
+            logger.info("报警已静音")
+        else:
+            self._set_status("● 报警已恢复", GREEN_OK)
+            logger.info("报警已恢复")
+
+    def _on_about(self) -> None:
+        """帮助 → 关于：弹窗显示版本信息。"""
+        QMessageBox.about(
+            self, "关于 — Metal Defect Detection",
+            "<h3>Metal Defect Detection v1.0</h3>"
+            "<p>工业金属表面缺陷检测系统</p>"
+            "<p>NEU-DET 6 类 / YOLOv8n / PyQt6 SCADA</p>"
+            "<hr>"
+            "<p><b>技术栈:</b> PyTorch 2.5.1 · ultralytics 8.4.60 · "
+            "PyQt6 6.6.1 · ONNX Runtime 1.23.2 · OpenCV 4.13</p>"
+            "<p><b>作者:</b> linsanqin</p>"
+            "<p><b>GitHub:</b> <a href='https://github.com/angleikun'>"
+            "github.com/angleikun</a></p>"
+        )
+
+    def _on_github(self) -> None:
+        """帮助 → GitHub：在浏览器打开仓库。"""
+        webbrowser.open("https://github.com/angleikun")
 
     # ── 中央区域 ────────────────────────────────────────────
 
@@ -323,7 +418,7 @@ class MainWindow(QMainWindow):
         self._on_open_folder()
 
     def _start_batch(self, folder_path: str,
-                     extensions: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".bmp")) -> None:
+                     extensions: tuple[str, ...] = (".jpg", ".jpeg")) -> None:
         """启动批处理。"""
         if self._batch_manager is None:
             self._set_status("● 模型未加载", RED_ALARM)

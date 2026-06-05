@@ -28,6 +28,7 @@ results/batch_runs/
 results/reports/
 
 # IDE
+.vs/
 .vscode/
 .idea/
 

@@ -59,7 +59,7 @@ class BatchManager(QObject):
         conf: float,
         iou: float,
         per_class_conf: dict | None = None,
-        extensions: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".bmp"),
+        extensions: tuple[str, ...] = (".jpg", ".jpeg"),
     ) -> None:
         """启动批量推理（异步）。
 

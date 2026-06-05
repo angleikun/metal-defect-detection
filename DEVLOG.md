@@ -929,3 +929,22 @@ per-class conf threshold 解决细粒度类别置信度分布差异。"
 今日总耗时约 5 小时。
 
 ---
+
+## Day 16: 项目正式收官 — 2026-06-05
+
+### 完成
+- activate_env.bat 修复 (3 行 → 16 行, cmd /k 保活, 不再闪退)
+- 菜单栏 12 个 action 实装（此前 Day 11 仅 widget 占位，点击无 GUI 反馈）
+  - 修复 QAction parent=None → parent=self（Windows 菜单不可见根因）
+  - 移除 QMenu 自定义 QSS（干扰 Windows 原生菜单渲染）
+- 批处理 jpg-only 过滤（此前 .png .bmp 吞入 mask 目录 3598 张）
+- 7 张 day16_* 端到端截图（干净/检测/进度/完成/报表/错误/E2E）
+- README.md 完整重写 (272 行, 12 章节, Badge x6, benchmark 表, 架构图)
+- docs/UI_DEV_PROMPTS.md (233 行通用 GUI 工程方法论模板)
+- 隐私防线加固 (git history amend + .gitignore 6 层防御)
+
+### 待优化（技术债, 移交 Week 4）
+- main_window.py 529 行（超 200 行, 菜单实装 + 回调导致）
+- 7 张截图中 3 张未用（day16_batch_complete/e2e/error_empty 备用）
+
+---

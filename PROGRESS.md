@@ -34,6 +34,8 @@
 - [x] Day 15 块 1: ONNX 导出 + 一致性验证 + CPU benchmark (25 FPS)
 - [x] Day 15 块 4: 简历素材清单 + 简历段落 + 面试 Q&A
 - [x] DEVLOG Insight #11 (ONNX CPU 工业意义), #12 (一致性验证) 记录
+- [x] Day 16: README 重写 + 7 截图 + 菜单 fix + 1800 批修复 + bat 修复
+- [x] Day 16: docs/UI_DEV_PROMPTS.md 通用 GUI 方法论
 - [x] GPU 推理稳态 21.5ms，crazing/inclusion 端到端验证通过
 - [x] DEVLOG Insight #6 (CUDA 不自动绑定), #7 (crazing 置信度低) 记录
 - [x] PyQt6 6.6.1 + Qt6 6.6.3 + Fluent 1.5.7 装齐 pytorch env
@@ -123,6 +125,7 @@ Day 15 三块全部完成。HTML Polish 4.5/5 + ONNX 导出 25 FPS + 简历素�
 13. [Day 15] ✅ 饼图标签精简（去掉检测框数，引导看表）
 14. [Week 4 重构] 把 ONNX 集成进 GUI（main_window 加 PyTorch / ONNX 后端切换）
 15. [Week 4 优化] ONNX INT8 量化（可能再降 40-50% CPU 耗时）
+16. [Week 4 重构] main_window.py 529 行拆分（菜单 → menu_builder.py / 回调 → menu_actions.py）
 
 ---
 
