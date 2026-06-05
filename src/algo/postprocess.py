@@ -8,7 +8,7 @@ Day 13: 新增 per-class threshold 过滤 (_filter_by_per_class)。
 
 import numpy as np
 
-from src.config.app_config import CLASS_NAMES, CLASS_COLORS, PER_CLASS_CONF
+from src.config.app_config import CLASS_NAMES, CLASS_COLORS
 
 
 def get_box_color(class_id: int) -> str:

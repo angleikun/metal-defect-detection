@@ -6,7 +6,6 @@
 
 import sys
 from pathlib import Path
-from collections import defaultdict
 import xml.etree.ElementTree as ET
 import numpy as np
 import cv2
@@ -293,7 +292,7 @@ def main():
     print("\n=== DEVLOG Entry ===")
     for d in descriptions:
         print(f"  {d['id']:>2}. {d['class']:<20} {d['error_type']:<15} IoU={d['iou']:>6} | {d['reason']}")
-    print(f"  Plots: results/bad_cases/bad_case_*.png")
+    print("  Plots: results/bad_cases/bad_case_*.png")
 
 
 if __name__ == "__main__":

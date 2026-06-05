@@ -6,7 +6,6 @@
 用法：python src/mask_generator.py
 """
 
-import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy as np

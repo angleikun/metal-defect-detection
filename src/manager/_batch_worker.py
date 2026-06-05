@@ -13,7 +13,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 from src.algo.postprocess import extract_detections
 from src.algo.yolo_detector import YoloDetector
-from src.config.app_config import BATCH_EMIT_EVERY, BATCH_OUTPUT_DIR, PER_CLASS_CONF
+from src.config.app_config import BATCH_EMIT_EVERY, BATCH_OUTPUT_DIR
 from src.manager._csv_writer import write_batch_csv
 from src.utils.logger import get_logger
 

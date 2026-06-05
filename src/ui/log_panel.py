@@ -3,7 +3,6 @@
 属于 UI 层——底部只读日志区域，接收 Logger 信号实时追加。
 """
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QTextCursor
 from PyQt6.QtWidgets import QPlainTextEdit, QSizePolicy
 
@@ -12,9 +11,6 @@ from src.ui.theme import (
     SURFACE,
     BORDER,
     TEXT_PRIMARY,
-    GREEN_OK,
-    RED_ALARM,
-    YELLOW_WARNING,
     CYAN_INFO,
     FONT_FAMILY,
     FONT_SIZE_LOG,

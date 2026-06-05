@@ -6,7 +6,6 @@
       data/splits/train_paths.txt / val_paths.txt（图像绝对路径列表，供 data.yaml 引用）
 """
 
-import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 

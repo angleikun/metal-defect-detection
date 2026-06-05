@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
 
 from src.config.app_config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, IMAGE_DIR, YOLO_BEST,
-    PER_CLASS_CONF, BATCH_OUTPUT_DIR, REPORT_OUTPUT_DIR,
+    PER_CLASS_CONF, BATCH_OUTPUT_DIR,
 )
 from src.manager.inference_manager import InferenceManager
 from src.manager.batch_manager import BatchManager

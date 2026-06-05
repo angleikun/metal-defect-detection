@@ -236,7 +236,6 @@ def _compute_summary(rows: list[dict]) -> dict:
 
 def _compute_class_stats(rows: list[dict]) -> dict:
     """按类别统计检出数、总检测框数、平均置信度。"""
-    from collections import defaultdict
     stats = defaultdict(lambda: {"count": 0, "total_dets": 0, "confs": []})
 
     for r in rows:

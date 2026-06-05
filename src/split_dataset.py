@@ -79,7 +79,6 @@ def split_stems(stems: list[str], n: int):
     """
     n_train = round(n * 0.8)
     n_val = round(n * 0.1)
-    n_test = n - n_train - n_val
     return stems[:n_train], stems[n_train:n_train + n_val], stems[n_train + n_val:]
 
 
@@ -135,8 +134,6 @@ def main():
     print(f"train.txt sha256: {sha}")
     print()
 
-    # 凑 DEVLOG 用的一行
-    class_totals = {cls: len(stems_by_class[cls]) for cls in CLASSES}
     print(
         "DEVLOG: Day 2.5 完成 stratified split，"
         f"train={len(train)} val={len(val)} test={len(test)}，"
