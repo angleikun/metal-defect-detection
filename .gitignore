@@ -49,3 +49,9 @@ RESUME_SECTION_*
 _private/
 _private*
 求职/
+
+# ===== Review 工作目录 =====
+# review/ 包含 REVIEW.md 自我代码审查、ruff/radon 输出等
+# 这些是个人自我诊断资料，含项目已知弱点
+# 不公开（保护简历策略 + 避免 HR 看到自我弱点清单）
+review/
