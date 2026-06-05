@@ -52,6 +52,7 @@
 - [x] GitHub Public publish: https://github.com/angleikun/metal-defect-detection
 - [ ] Week 4 待办: 简历精修 + 求职准备 + LinkedIn (按用户节奏)
 - [ ] Demo 视频: 投出简历看反馈后定夺
+- [ ] GitHub Contributors 显示 "claude" → 方案 B: README 加 AI 协作致谢段
 
 ---
 
