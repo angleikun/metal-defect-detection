@@ -948,3 +948,45 @@ per-class conf threshold 解决细粒度类别置信度分布差异。"
 - 7 张截图中 3 张未用（day16_batch_complete/e2e/error_empty 备用）
 
 ---
+
+## Day 16 收尾: GitHub Publish — 2026-06-05
+
+### GitHub 仓库
+- URL: https://github.com/angleikun/metal-defect-detection
+- 可见性: Public
+- 首次 push commit: 4f8295b
+- 远程同步: 完整 13 commits + 372 files
+
+### 网络挑战
+直连 HTTPS 不通（SSL_ERROR_SYSCALL），切换网络环境完成 push。
+
+### 隐私验证（push 后远程仓库扫描）
+- 简历_* 文件: 0
+- RESUME_SECTION_* 文件: 0
+- _private* 路径: 0
+- 面试/求职/私密关键词: 0
+- .gitignore 5 层防御实战验证有效
+
+### 项目正式状态
+- 训练: YOLOv8 test mAP 0.745 + U-Net IoU 0.413
+- 标注: 30 张人工 polygon mask
+- GUI: SCADA 风 PyQt6 + 多线程 + 12 action 菜单
+- 批处理: 1800 张 33.2s, cancel 18ms
+- 报表: HTML base64 单文件 105 KB
+- 部署: ONNX CPU 25 FPS
+- 文档: README + DEVLOG (16 Insights) + 简历素材 + GUI 方法论
+- 上线: GitHub Public
+
+### Insight #13: GitHub Push 网络问题与隐私防御
+- 直连 HTTPS 在中国大陆不稳定，必要时换网络
+- 安全门 5 层（.gitignore × 6 + ls-files 审查 + log 历史扫描 + dry-run + 远程验证）实战有效
+- 隐私应急响应（Day 15 amend）+ 长期防御（.gitignore × 6）+ 上线前最终验证 = 完整安全闭环
+
+### Week 3 总结（Day 11-16）
+- 总耗时: 约 35 小时
+- 产出: 4400 行代码 + 13 commit + 16 Insight + 7 截图 + 完整 GitHub 仓库
+- 关键学习: CC 协作 8 次自由发挥事件 + 4 个通用 GUI prompt 模板沉淀
+
+Week 3 收官。下阶段: Week 4 简历精修 + 求职准备。
+
+---

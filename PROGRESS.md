@@ -46,9 +46,12 @@
 
 ---
 
-## 进行中
+## 当前状态
 
-- 待开始: Day 16 完整验收 + GitHub 同步
+- [x] Day 1-16 全部完成 (Week 1-3)
+- [x] GitHub Public publish: https://github.com/angleikun/metal-defect-detection
+- [ ] Week 4 待办: 简历精修 + 求职准备 + LinkedIn (按用户节奏)
+- [ ] Demo 视频: 投出简历看反馈后定夺
 
 ---
 
