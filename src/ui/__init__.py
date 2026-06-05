@@ -1,1 +1,1 @@
-﻿# src\ui package
+# src\ui package

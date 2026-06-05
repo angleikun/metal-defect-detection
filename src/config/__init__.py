@@ -1,1 +1,1 @@
-﻿# src\config package
+# src\config package

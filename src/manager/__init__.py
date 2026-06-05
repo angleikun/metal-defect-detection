@@ -1,1 +1,1 @@
-﻿# src\manager package
+# src\manager package
