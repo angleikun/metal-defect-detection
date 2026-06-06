@@ -55,3 +55,8 @@ _private*
 # 这些是个人自我诊断资料，含项目已知弱点
 # 不公开（保护简历策略 + 避免 HR 看到自我弱点清单）
 review/
+
+# ===== Notebook 输出文件 =====
+# Jupyter notebook 的执行版含 base64 嵌入图像，文件巨大
+# 跟踪 .py 源码即可，.ipynb 跟踪会扭曲 GitHub Languages 占比
+notebooks/*.ipynb
