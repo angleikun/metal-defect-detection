@@ -94,20 +94,42 @@ def compute_iou(b1, b2):
     return inter / (a1 + a2 - inter + 1e-8)
 
 
-def evaluate_per_scale(gt_dict, pred_dict):
-    """按 S/M/L 分尺度计算 per-class mAP@0.5（COCO 风格）。"""
+def _collect_gt_counts(gt_dict):
+    """收集 GT 在 scale × class 网格的分布计数。
+
+    Args:
+        gt_dict: {stem: [{cls, bbox, area, scale}, ...]}
+
+    Returns:
+        gt_counts[scale][cls] -> int
+    """
+    gt_counts = defaultdict(lambda: defaultdict(int))
+    for stem, gts in gt_dict.items():
+        for gt in gts:
+            gt_counts[gt["scale"]][gt["cls"]] += 1
+    return gt_counts
+
+
+def _match_preds_to_gts(gt_dict, pred_dict):
+    """Greedy 匹配每张图的 pred 到 GT，按 IoU>=0.5 + conf 倒序。
+
+    严格保持原 evaluate_per_scale PHASE A 行为：
+    - sorted(preds, key=conf, reverse=True)
+    - IoU 阈值 0.5
+    - pred 归属 scale 由 pred bbox 面积决定（不是 GT scale）
+
+    Args:
+        gt_dict: {stem: [{cls, bbox, area, scale}, ...]}
+        pred_dict: {stem: [{cls, conf, bbox}, ...]}
+
+    Returns:
+        matches[scale][cls] -> {"y_true": list[int 0/1], "y_score": list[float]}
+    """
     scales = ["small", "medium", "large"]
-    # 每个 scale 每个 class 收集 y_true 和 y_score
-    data = {s: {c: {"y_true": [], "y_score": [], "gt_count": 0} for c in CLASSES} for s in scales}
+    matches = {s: {c: {"y_true": [], "y_score": []} for c in CLASSES} for s in scales}
 
     for stem, gts in gt_dict.items():
         preds = pred_dict.get(stem, [])
-
-        # 对每个 GT，计数
-        for gt in gts:
-            data[gt["scale"]][gt["cls"]]["gt_count"] += 1
-
-        # 匹配：pred -> GT（IoU >= 0.5 且类别一致）= TP，否则 = FP
         matched = set()
         for pred in sorted(preds, key=lambda x: x["conf"], reverse=True):
             best_iou, best_i = 0.0, -1
@@ -122,50 +144,91 @@ def evaluate_per_scale(gt_dict, pred_dict):
             pred_area = (pred["bbox"][2] - pred["bbox"][0]) * (pred["bbox"][3] - pred["bbox"][1])
             pred_scale = "small" if pred_area < SMALL else ("large" if pred_area >= MEDIUM else "medium")
 
-            data[pred_scale][pred["cls"]]["y_true"].append(1 if is_tp else 0)
-            data[pred_scale][pred["cls"]]["y_score"].append(pred["conf"])
+            matches[pred_scale][pred["cls"]]["y_true"].append(1 if is_tp else 0)
+            matches[pred_scale][pred["cls"]]["y_score"].append(pred["conf"])
 
             if is_tp:
                 matched.add(best_i)
+    return matches
 
-    # Compute AP per scale per class
-    ap = {s: {} for s in scales}
-    for s in scales:
+
+def _compute_interpolated_ap(y_true, y_score, gt_count):
+    """从 y_true/y_score/gt_count 算插值 AP。
+
+    纯 numpy 数学：按 score 排序 → cumsum TP/FP → recall/precision
+    → 反向单调插值 → 矩形积分。
+
+    严格保留原 PHASE B 运算顺序与 `+ 1e-8` 平滑项。
+
+    Args:
+        y_true: list[int 0/1]，与 y_score 同长度
+        y_score: list[float]
+        gt_count: int，recall 分母
+
+    Returns:
+        float AP；gt_count==0 返回 nan（→ main 打印 "N/A"）；
+        gt_count>0 但无预测返回 0.0
+    """
+    if gt_count == 0:
+        return float("nan")
+    if len(y_true) == 0:
+        return 0.0
+    yt = np.array(y_true); ys = np.array(y_score)
+    order = np.argsort(-ys)
+    yt = yt[order]
+    tp_cum = np.cumsum(yt)
+    fp_cum = np.cumsum(1 - yt)
+    recalls = tp_cum / gt_count
+    precisions = tp_cum / (tp_cum + fp_cum + 1e-8)
+    for i in range(len(precisions) - 1, 0, -1):
+        precisions[i - 1] = max(precisions[i - 1], precisions[i])
+    ap_val = 0.0
+    prev_r = 0.0
+    for r, p in zip(recalls, precisions):
+        ap_val += p * (r - prev_r)
+        prev_r = r
+    return float(ap_val)
+
+
+def evaluate_per_scale(gt_dict, pred_dict):
+    """按 S/M/L 分尺度计算 per-class mAP@0.5（COCO 风格）。
+
+    协调三个 helper：收 GT 计数 → 做 pred 匹配 → 算插值 AP。
+    返回 `(ap, data)`：`data` 兼容旧调用约定（保留 y_true/y_score/gt_count）。
+    """
+    gt_counts = _collect_gt_counts(gt_dict)
+    matches = _match_preds_to_gts(gt_dict, pred_dict)
+
+    ap = {}
+    data = {}
+    for scale in ["small", "medium", "large"]:
+        ap[scale] = {}
+        data[scale] = {}
         for cls in CLASSES:
-            d = data[s][cls]
-            if d["gt_count"] == 0:
-                ap[s][cls] = float("nan")  # 无此类 GT
-            elif len(d["y_true"]) == 0:
-                ap[s][cls] = 0.0  # 有 GT 但无预测
-            else:
-                # Manual AP (COCO style: integral over PR curve)
-                yt = np.array(d["y_true"]); ys = np.array(d["y_score"])
-                order = np.argsort(-ys)
-                yt = yt[order]
-                tp_cum = np.cumsum(yt)
-                fp_cum = np.cumsum(1 - yt)
-                recalls = tp_cum / d["gt_count"]
-                precisions = tp_cum / (tp_cum + fp_cum + 1e-8)
-                # Interpolate precision: for each r, use max p at >= r
-                for i in range(len(precisions) - 1, 0, -1):
-                    precisions[i - 1] = max(precisions[i - 1], precisions[i])
-                # AP = integral of interpolated precision over recall
-                ap_val = 0.0
-                prev_r = 0.0
-                for r, p in zip(recalls, precisions):
-                    ap_val += p * (r - prev_r)
-                    prev_r = r
-                ap[s][cls] = float(ap_val)
-
+            m = matches[scale][cls]
+            ap[scale][cls] = _compute_interpolated_ap(
+                m["y_true"], m["y_score"], gt_counts[scale][cls]
+            )
+            data[scale][cls] = {
+                "y_true": m["y_true"],
+                "y_score": m["y_score"],
+                "gt_count": gt_counts[scale][cls],
+            }
     return ap, data
 
 
-def main():
-    print("Loading test GT & predictions...")
-    gt_dict = load_test_gt()
-    pred_dict = run_predictions()
+def _compute_gt_distribution(gt_dict):
+    """计算 GT 在 scale × class 网格的分布 + 三尺度合计。
 
-    # 统计 bbox 分布
+    Args:
+        gt_dict: {stem: [{cls, scale, ...}, ...]}
+
+    Returns:
+        (size_counts, totals, gt_total)
+        - size_counts[cls][scale] -> int
+        - totals[scale] -> int
+        - gt_total: int
+    """
     size_counts = {cls: {"small": 0, "medium": 0, "large": 0} for cls in CLASSES}
     for img_gts in gt_dict.values():
         for gt in img_gts:
@@ -177,15 +240,27 @@ def main():
             totals[s] += size_counts[cls][s]
     gt_total = sum(totals.values())
 
+    return size_counts, totals, gt_total
+
+
+def _print_gt_distribution_table(totals, gt_total):
+    """打印 GT 在三尺度上的分布（前导空行 + 表头 + 3 行）。
+
+    `print(f"\\nGT...")` 的 `\\n` 是原代码刻意打的前导空行，
+    必须保留以维持 golden 字节一致。
+    """
     print(f"\nGT bbox distribution (test set, {gt_total} total):")
     print(f"  Small (<32^2):  {totals['small']:>4} ({totals['small']/gt_total*100:.1f}%)")
     print(f"  Medium:         {totals['medium']:>4} ({totals['medium']/gt_total*100:.1f}%)")
     print(f"  Large (>=96^2): {totals['large']:>4} ({totals['large']/gt_total*100:.1f}%)")
 
-    print("\nComputing per-scale mAP...")
-    ap, data = evaluate_per_scale(gt_dict, pred_dict)
 
-    # ── 输出表格 ────────────────────────────────────────
+def _print_per_scale_table(ap, size_counts):
+    """打印 per-scale × per-class mAP 表（表头 + 6 行 + 均值 + 脚注）。
+
+    严格保留原列宽（`{:>14.4f}` 等）、N/A 触发条件（np.isnan）、
+    `*` 低样本标记（<30 GT）、均值 excl-N/A 语义。
+    """
     print()
     print("=" * 90)
     print("Per-Scale mAP@0.5 — Test Set (COCO Scale, 200x200 original coords)")
@@ -216,6 +291,21 @@ def main():
     print()
     print("  *  = < 30 GT bboxes in this scale, AP has high variance (for reference only)")
     print("  N/A = 0 GT bboxes in this scale, AP not computable")
+
+
+def main():
+    """协调 load → GT 分布 → per-scale eval → PNG → CSV。"""
+    print("Loading test GT & predictions...")
+    gt_dict = load_test_gt()
+    pred_dict = run_predictions()
+
+    size_counts, totals, gt_total = _compute_gt_distribution(gt_dict)
+    _print_gt_distribution_table(totals, gt_total)
+
+    print("\nComputing per-scale mAP...")
+    ap, data = evaluate_per_scale(gt_dict, pred_dict)
+
+    _print_per_scale_table(ap, size_counts)
 
     # ── 柱状图 ──────────────────────────────────────────
     fig, ax = plt.subplots(figsize=(14, 6))
