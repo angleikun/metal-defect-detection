@@ -50,6 +50,10 @@ _private/
 _private*
 求职/
 
+# 明确忽略 docs/RESUME_MATERIAL.md（曾被误入库，2026-06-13 清理）
+docs/RESUME_MATERIAL.md
+docs/RESUME_*.md
+
 # ===== Review 工作目录 =====
 # review/ 包含 REVIEW.md 自我代码审查、ruff/radon 输出等
 # 这些是个人自我诊断资料，含项目已知弱点
