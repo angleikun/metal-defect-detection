@@ -1,0 +1,25 @@
+# =====================================================
+# quantize/.gitignore
+# 控制本地子目录入 git 的范围
+# =====================================================
+
+# ===== ultralytics 验证缓存（可复现，6.5 MB）=====
+runs/
+
+# ===== 过大的中间模型（脚本可重新生成）=====
+# yolov8n_neu_fp32.onnx (11.70 MB) - export_onnx.py 30 秒生成
+yolov8n_neu_fp32.onnx
+
+# ===== v2 证伪实验产物（结论已在 markdown，模型本身无保留价值）=====
+yolov8n_neu_int8_v2.onnx
+
+# ===== Python =====
+__pycache__/
+*.pyc
+
+# ===== 临时脚本（验证期产物，不应再出现）=====
+_*.py
+
+# ===== 放行：根目录 .gitignore 屏蔽了 *.pt / *.onnx，但本目录的模型需要入 git =====
+!yolov8n_neu_fp32.pt
+!yolov8n_neu_int8.onnx
