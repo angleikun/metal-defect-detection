@@ -140,6 +140,10 @@ python benchmark_onnx_vs_pytorch.py
 - PyTorch → ONNX conversion (opset=12, simplified)
 - Consistency verified: **box count exact match, coordinate diff < 0.06 px**
 - CPU inference **25 FPS** — suitable for GPU-less industrial PCs
+- INT8 dynamic quantization: 3.66x compression (11.70 MB -> 3.20 MB), mAP@0.5 0.751 -> 0.646
+- Speed trade-off: INT8 slower than FP32 on AMD Zen 3+ (no AVX-VNNI), expected gain on ARM / Intel VNNI / TensorRT
+- Falsification experiment confirmed Detect-layer exclusion is not the bottleneck (delta mAP +0.001)
+- See [`quantize/README.md`](quantize/README.md) for full report, scripts, and v1/v2 comparison
 
 ## Project Structure
 
